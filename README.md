@@ -1,1 +1,1 @@
-ok
+git init
