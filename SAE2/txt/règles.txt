@@ -1,0 +1,47 @@
+RÈGLES DE ROAD TO THE KING
+Contexte : 
+Mi-XVe siècle, alors que vous aspirez a devenir messager, le roi fit une annonce discrète. 
+Sa mission : le premier messager réussissant a transmettre son message au roi voisin deviendra officiellement son nouveau messager.
+C’est une occasion en or pour vous ! Vous compéterez donc contre 1 à 3 autres aspirants pour une course remplie d’embûches (= de questions de maths)
+
+But du jeu : arriver au bout du plateau. Chaque tour, une question de maths vous sera posée. Si vous parvenez à y répondre, vous avancez d'une case.
+Mais des choses pimentent la partie !
+
+1 - les parametres.
+        lorsque vous lancer une partie, vous pourrez la personnalisée avec : le temps imparti par question, le nb de joueurs, le nb de points de victoire...
+        
+2 - les objets.
+        pendant la partie, dans n'importe quel phase d'entrée de texte, vous pourrez écrire "i" pour consulter vos objets et leurs effets (que vous récupererez au fil de la partie)
+        ainsi que "u" pour utiliser ces objets. Plus précisement "u1" pour votre premier objet, "u2" pour votre second etc...
+        
+        EXEMPLES : vous devez répondre a une question. A la place, vous décidez de mettre "i" et vous constatez que vous avez un "minerai de fer" et un "bouclier fissuré".
+        Les effets du bouclier fissuré vous interesse dans cette situation et décidez de faire "u2". Votre bouclié fissuré est dès lors activé !
+        
+3 - les déplacements.
+        A votre tour, vous devrez choisir la case vers laquelle vous vous déplacez. Elles sont numérotée de 1 a 5 (de haut en bas) mais vous ne pouvez vous déplacer que sur
+        les 3 case devant vous.
+        Exemple :
+        V = vous. C = case possible
+       +---+---+---+---+ 
+       |   | C |   |   |
+       +---+---+---+---+
+       | V | C |   |   |
+       +---+---+---+---+
+       |   | C |   |   |
+       +---+---+---+---+
+       |   |   |   |   | soit les cases 1, 2 et 3 (mais pas la 4)
+       +---+---+---+---+
+        Cependant ! Si un autre joueur se trouve sur une case possible, elle ne devient plus accessible.
+        Etre collé a un bord restreint egalement vos cases.
+        Et certains objets/evenements aussi.
+        
+4 - les evenements.
+        Pour rendre le jeu plus immersif, des evenements arriveront, rendant crédibles les objets/monstres/boss que vous rencontrerez...
+        Ces evenements vous proposerons parfois des dilemmes entre deux choix (rester a votre case pour récup un objet precieux ou passer votre chemin) ou des malus (prochaine case
+        imposée par exemple)
+        
+5 - les boss.
+        En arrivant sur le territoire d'un boss, vous aurez le choix de vous battre contre lui. Pour faire ainsi, vous devrez répondre a autant de questions que ce dernier a de PV, 
+        avec a la clé des récompenses inégalées.
+        
+6 - les 1v1.
