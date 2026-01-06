@@ -20,6 +20,8 @@ CSVFile questions = loadCSV("CSV/questions.CSV",'_');
 CSVFile zones = loadCSV("CSV/zones.CSV",'_');
 Joueur[] ensembleJoueur;
 Partie partie;
+int nbJoueurs;
+int joueur = 0; //joueur actuel
 
 //-------------programme-----------------------------------------------------------------------------
     void algorithm(){
@@ -28,7 +30,7 @@ Partie partie;
 
         //LE JEU
         if(premierChoix == 1){
-            int nbJoueurs = nbJoueurs();
+            nbJoueurs = nbJoueurs();
             println("Cette partie aura " + nbJoueurs + " joueurs.");
             ensembleJoueur = new Joueur[nbJoueurs];
             remplirTab();
@@ -42,17 +44,61 @@ Partie partie;
             }
             int tempsQuestions = tempsQuestions();
             println("Vous avez mis le temps au mode " + tempsQuestions + ".");
+            while(scoreMax(nbJoueurs) < 10){
+                joueur = (joueur + 1)%nbJoueurs;
+                ligne();
+
+                println("Au tour du messager " + ensembleJoueur[joueur].nom + " !");
+                String zone /*le nom*/ = getCell(zones, (int)(random()*(lignesCSV(zones)-1))+1, 0);
+            
+                String evenementZone;
+                int evenementLigne;
+                do{
+                    evenementLigne = StringToInt(getCell(evenements, (int)(random()*(lignesCSV(evenements)-1))+1, 0));
+                    evenementZone = getCell(evenements, evenementLigne, 3);
+                }while(!(equals(evenementZone, zone)));  
+                String descriptionEvenement = getCell(evenements, evenementLigne, 2);
+                String evenement /*le nom*/ = getCell(evenements, evenementLigne, 1);
+                println(descriptionEvenement);
+
+                String questionEvenement;
+                println("1");
+                int questionLigne;
+                println("2");
+
+                do{
+                    println("3");
+                    questionLigne = StringToInt(getCell(questions, (int)(random()*(lignesCSV(questions)-1))+1, 0));
+                    println("4 : " + questionLigne);
+                    questionEvenement = getCell(questions, questionLigne, 4);
+                    println("5 : " + questionEvenement + " | " + evenement);
+                }while(!(equals(questionEvenement, evenement)));  
+                
+                String question = getCell(questions, questionLigne, 2);
+                print("Pressez \"entrée\" pour reveler la question.");
+                readString();
+                println("Question pour le messager " + ensembleJoueur[joueur].nom + " : " + question);
+                print("Votre réponse : ");
+                String reponse = readString();
+                if(verifQuestion(reponse,questionLigne,questions)){
+                    ensembleJoueur[joueur].score = ensembleJoueur[joueur].score + 1;
+                }
+
+            }
+            ligne();
+            ligne();
+            println("Bien joué ! Le messager " + ensembleJoueur[joueur].nom + " a atteint le score de 10 et remporte la partie ! Félicitations !");
         }
 
         //LES COMPTES
 
         //LES REGLES
-        if(premierChoix == 3){
+        /* if(premierChoix == 3){
             File règles = newFile("txt/règles.txt");
             while(ready(règles)){
                 println(readLine(règles));
-            }
-        }
+            }*
+        } */
         
     }
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -123,10 +169,14 @@ Partie partie;
         }
         return result;
     }
+
     void ligne(){
         println("--------------------------------------------------------------");
     }
 
+    int lignesCSV(CSVFile f){
+        return rowCount(f);
+    }
 //-------------convertions-----------------------------------------------------------------------------
     int StringToInt(String entree){
         char result = charAt(entree,0);
@@ -274,8 +324,60 @@ Partie partie;
         }while(!(controleSaisieInt(saisie, '6')));
         return StringToInt(saisie);
     }
-//-------------gameplay-----------------------------------------------------------------------------
 
+
+//-------------gameplay-----------------------------------------------------------------------------
+    int scoreMax(int nbJoueurs){
+        int scoreMax = ensembleJoueur[0].score;
+        for(int i = 1; i < length(ensembleJoueur);i++){
+            if(ensembleJoueur[i].score > scoreMax){
+                scoreMax = ensembleJoueur[i].score;
+            }
+        }
+        return scoreMax;
+    }
+
+    /* int[][] creerTab(int lignes, int colonnes){
+        int [][] Tcréer = new int[lignes][colonnes];
+        placerJoueur(nbJoueurs); 
+        return Tcréer;
+    } */
+
+    void dessineContenuCase(int m){
+        print('|');
+        for(int j=0;j<m;j++){
+            print("   ");
+            print('|');
+        }
+        println("");
+    }
+
+    void dessineBordCase (int m){
+        print("+");
+        for(int j =0;j<m;j++){
+            print("---");
+            print('+');
+        }
+        println("");
+    }
+
+    void afficherTab(int[][] t) {
+        for(int i=0;i < length(t,1);i++){
+            dessineBordCase(length(t,2));
+            dessineContenuCase(length(t,2));
+        }
+        dessineBordCase(length(t,2));
+    }
+
+    boolean verifQuestion(String saisie, int n, CSVFile questions){
+    if(equals(getCell(questions, n, 3),saisie)){
+        println("Bien joué messager " + ensembleJoueur[joueur].nom + ", tu peux continuer ton chemin !");
+        return true;
+    }else{
+        println("Je suis désolé messager " + ensembleJoueur[joueur].nom + ", tu vas devoir rester un moment dans cet endroit.");
+        return false;
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////_________  /////////////////////////////////////////////////////////////////

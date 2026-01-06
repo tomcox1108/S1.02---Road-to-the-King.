@@ -1,0 +1,8 @@
+0_nom_desc_zone ou se produit_état(0-question,1-dilemme,2-boss)_etatID(0 si aucun)
+1_grotte a luciole_Vous trouvez une grotte éclairée dans laquel vous penetrez._dans une grotte_0_0
+2_stonehenge_A l'approche d'une fôret sans nom, un Stonehenge se dresse face à vous._dans une foret_1_1
+3_front déchu_Vous arrivez sur le champ de bataille désolé de la guerre du Grohl._sur un champ de bataille_0_0
+4_combat boss Ørin_En vous enfoncant trop dans la montagne, le territoire de l'Ørin apparait face à vous._sur le territoire de l'Ørin_2_1
+5_chapelle d'Arî-il_Cachée dans ses terres déchu, la chapelle d'Arî-il se dresse face a vous. Vous appercevez une rune d'alteration a l'interieur._dans une chapelle_0_0
+6_jsp_Pas d'inspi_sur la montagne gelée_0_0
+
