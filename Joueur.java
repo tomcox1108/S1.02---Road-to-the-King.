@@ -12,5 +12,6 @@ class Joueur{
     boolean bloqué = false;
     int r;
     int v;
-    int b; //couleur du joueur
+    int b; //couleurs du joueur
+    int posX; //la posY est le score
 }
