@@ -8,7 +8,7 @@ TODO :
 - implémenter la fonction d'objets (simple)
 - implémenter les boss ?
 - avoir pour chaque joueur une pos x et y. Pour pv enlever leur trace.
-*/ 
+*/
 
 import extensions.File;
 import extensions.CSVFile;
@@ -21,10 +21,11 @@ final CSVFile evenements = loadCSV("CSV/evenements.CSV",'_');
 final CSVFile items = loadCSV("CSV/items.CSV",'_');
 final CSVFile questions = loadCSV("CSV/questions.CSV",'_');
 final CSVFile zones = loadCSV("CSV/zones.CSV",'_');
+final String caseAffichage = "   ";
 Joueur[] ensembleJoueur; //trouver joueur actu et load les données dans les bonnes cases
+ContenuCases[][] contenuChaqueCase; 
 String[][] tableauDeJeu;
 Partie partie;
-//int nbJoueurs;
 int joueurActu = 0; //joueur actuel
 
 //-------------programme-----------------------------------------------------------------------------
@@ -34,11 +35,11 @@ int joueurActu = 0; //joueur actuel
 
         //LE JEU
         if(premierChoix == 1){
-            nbJoueurs = nbJoueurs();
+            int nbJoueurs = nbJoueurs();
             println("Cette partie aura " + nbJoueurs + " joueurs.");
             ensembleJoueur = new Joueur[nbJoueurs];
             remplirTab();
-            for(int i = 1; i<=nbJoueurs;i++){
+            for(int i = 1; i<=length(ensembleJoueur);i++){
                 ligne();
                 println("Connection joueur " + i + " :");
                 ensembleJoueur[i-1] = newJoueur(i,connection(),
@@ -51,46 +52,45 @@ int joueurActu = 0; //joueur actuel
             }
             int tempsQuestions = tempsQuestions();
             println("Vous avez mis le temps au mode " + tempsQuestions + ".");
+            contenuChaqueCase = creerTabContenu(5,10);
             tableauDeJeu = creerTab(5,10);
 
-            while(scoreMax(nbJoueurs) < 10){
+            while(scoreMax(length(ensembleJoueur)) < 10){
                 ligne();
                 afficherTab(tableauDeJeu);
 
                 println("Au tour du messager " + ensembleJoueur[joueurActu].nom + " !");
                 int uneCase = choixCase();
+                box(contenuChaqueCase[ensembleJoueur[joueurActu].score][uneCase].evenement);
 
-                String zone /*le nom*/ = getCell(zones, (int)(random()*(lignesCSV(zones)-1))+1, 0);
-            
-                String evenementZone;
-                int evenementLigne;
-                do{
-                    evenementLigne = StringToInt(getCell(evenements, (int)(random()*(lignesCSV(evenements)-1))+1, 0));
-                    evenementZone = getCell(evenements, evenementLigne, 3);
-                }while(!(equals(evenementZone, zone)));  
-                String descriptionEvenement = getCell(evenements, evenementLigne, 2);
-                String evenement /*le nom*/ = getCell(evenements, evenementLigne, 1);
-                box(descriptionEvenement);
-
-                String questionEvenement;
-                int questionLigne;
-
-                do{
-                    questionLigne = StringToInt(getCell(questions, (int)(random()*(lignesCSV(questions)-1))+1, 0));
-                    questionEvenement = getCell(questions, questionLigne, 4);
-                }while(!(equals(questionEvenement, evenement)));  
-                
-                String question = getCell(questions, questionLigne, 2);
                 box("Pressez \"entrée\" pour reveler la question.");
                 readString();
-                box("Question pour le messager " + ensembleJoueur[joueurActu].nom + " : " + question);
+                //debut timer
+                long debut = getTime();
+                box("Question pour le messager " + 
+                    ensembleJoueur[joueurActu].nom + 
+                    " : " + 
+                    contenuChaqueCase[ensembleJoueur[joueurActu].score][uneCase].question + 
+                    "Vous avez " + 
+                    calculTempsQuestions(tempsQuestions, contenuChaqueCase[ensembleJoueur[joueurActu].score][uneCase].temps) + 
+                    "secondes.");
                 print("Votre réponse : ");
                 String reponse = readString();
-                if(verifQuestion(reponse,questionLigne,questions)){
-                    ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + 1;
-                    updateTab(uneCase);
+                println("1");
+                if(verifQuestion(contenuChaqueCase[ensembleJoueur[joueurActu].score][uneCase].reponse,reponse)){
+                    long fin = getTime();
+                    double tempsPris = (fin - debut)/1000;
+                    if(tempsQuestions != 6 || calculTempsQuestions(tempsQuestions, contenuChaqueCase[ensembleJoueur[joueurActu].score][uneCase].temps) < tempsPris){
+                        ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + 1;
+                        updateTab(uneCase);
+                        box("Vous avez mis " + tempsPris + "s à répondre.");
+                    }else{
+                        box("Vous avez mis trop de temps à répondre messager. Soit " + tempsPris + " secondes.");
+                    }
                 }
-                joueurActu = (joueurActu + 1)%nbJoueurs;
+                long fin = getTime();
+                //fin timer
+                joueurActu = (joueurActu + 1)%length(ensembleJoueur);
 
             }
             ligne();
@@ -216,21 +216,21 @@ int joueurActu = 0; //joueur actuel
     }
 
     int posX(int joueur){
-        if(joueur == 1 && nbJoueurs == 3 || 
-            joueur == 1 && nbJoueurs == 4){
+        if(joueur == 1 && length(ensembleJoueur) == 3 || 
+            joueur == 1 && length(ensembleJoueur) == 4){
             return 0;
         }
-        else if(joueur == 1 && nbJoueurs == 2 ||
-            joueur == 2 && nbJoueurs == 4){
+        else if(joueur == 1 && length(ensembleJoueur) == 2 ||
+            joueur == 2 && length(ensembleJoueur) == 4){
             return 1;
         }
-        else if(joueur == 1 && nbJoueurs == 1 || 
-            joueur == 2 && nbJoueurs == 3 || 
-            joueur == 3 && nbJoueurs == 4){
+        else if(joueur == 1 && length(ensembleJoueur) == 1 || 
+            joueur == 2 && length(ensembleJoueur) == 3 || 
+            joueur == 3 && length(ensembleJoueur) == 4){
             return 2;
         }
-        else if(joueur == 2 && nbJoueurs == 2 ||
-            joueur == 4 && nbJoueurs == 4){
+        else if(joueur == 2 && length(ensembleJoueur) == 2 ||
+            joueur == 4 && length(ensembleJoueur) == 4){
             return 3;
         }else{
             return 4;
@@ -311,6 +311,15 @@ int joueurActu = 0; //joueur actuel
         p.scoreDeVictoire = score;
         return p;
     }
+
+    ContenuCases newContenuCases(String event, String question, int reponse, int temps){
+        ContenuCases c = new ContenuCases();
+        c.evenement = event;
+        c.question = question;
+        c.reponse = reponse;
+        c.temps = temps;
+        return c;
+    }
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////_____  /////////////////////////////////////////////////////////////////
 //////////////////////////////|JOUER| /////////////////////////////////////////////////////////////////
@@ -355,8 +364,11 @@ int joueurActu = 0; //joueur actuel
                 println("/!\\ MDP incorrect /!\\");
                 connection();
             }
+            return getCell(comptes, StringToInt(saisie), 0);
+        }else{
+            print("Choisissez votre pseudo : ");
+            return readString();
         }
-        return getCell(comptes, StringToInt(saisie), 0);
     }
 
     boolean connectionMDP(int compte){
@@ -384,7 +396,7 @@ int joueurActu = 0; //joueur actuel
 
     void remplirTab(){ //remplir tab ensemble joueur pour pv le lire
         for(int i = 0; i < length(ensembleJoueur);i++){
-            ensembleJoueur[i] = newJoueur(i+1,"   ",0,0,0,0);
+            ensembleJoueur[i] = newJoueur(i+1,caseAffichage,0,0,0,0);
         }
     }
 
@@ -399,16 +411,10 @@ int joueurActu = 0; //joueur actuel
                     "- 4 joueuse(r)s");
             print("Votre choix : ");
             saisie = readString();
-            if(equals(saisie,"")){
+            if(equals(saisie,"") || !(controleSaisieInt(saisie,'4'))){
                 ligne();
                 println("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
-            }
-            else if(controleSaisieInt(saisie,'4')){
-                //pass
-            }else{
-                ligne();
-                println("/!\\ Saisie incorrecte /!\\");
             }
         }while(!(controleSaisieInt(saisie, '4')));
         return StringToInt(saisie);
@@ -444,7 +450,7 @@ int joueurActu = 0; //joueur actuel
         do{
             print("Choisissez votre prochaine case (");
             for(int i = 0; i < length(tableauDeJeu,1);i++){
-                if(equals(tableauDeJeu[i][ensembleJoueur[joueurActu].score+1],"   ")){
+                if(equals(tableauDeJeu[i][ensembleJoueur[joueurActu].score+1],caseAffichage)){
                     print(i+1 + " ou ");
                     casesPossibles = "" + (i+1) + ",";
                 }
@@ -470,10 +476,14 @@ int joueurActu = 0; //joueur actuel
         return true;
     } //a refaire. Pas accurate
 
+    int calculTempsQuestions(int coeff, int tempsQuestion){
+        return tempsQuestion * (coeff * 2);
+    }
+    
 //-------------gameplay-----------------------------------------------------------------------------
     int scoreMax(int nbJoueurs){
         int scoreMax = ensembleJoueur[0].score;
-        for(int i = 1; i < length(ensembleJoueur);i++){
+        for(int i = 1; i < nbJoueurs;i++){
             if(ensembleJoueur[i].score > scoreMax){
                 scoreMax = ensembleJoueur[i].score;
             }
@@ -484,37 +494,66 @@ int joueurActu = 0; //joueur actuel
     String[][] creerTab(int lignes, int colonnes){
         String [][] Tcréer = new String[lignes][colonnes];
         Tcréer = remplirTab(Tcréer);
-        placerJoueur(Tcréer,nbJoueurs); 
+        placerJoueurs(Tcréer); 
+        return Tcréer;
+    }
+
+    ContenuCases[][] creerTabContenu(int lignes, int colonnes){
+        ContenuCases[][] Tcréer = new ContenuCases[lignes][colonnes];
+        for(int i = 0; i < lignes; i++){
+            for(int j = 0; j < colonnes; j++){
+                String zone /*le nom de la zone*/ = getCell(zones, (int)(random()*(lignesCSV(zones)-1))+1, 0);
+                String evenementZone;
+                int evenementLigne;
+                do{ //trouver un evenement possible dans cette zone
+                    evenementLigne = StringToInt(getCell(evenements, (int)(random()*(lignesCSV(evenements)-1))+1, 0));
+                    evenementZone = getCell(evenements, evenementLigne, 3);
+                }while(!(equals(evenementZone, zone))); 
+                String descriptionEvenement = getCell(evenements, evenementLigne, 2);
+                String evenement /*le nom*/ = getCell(evenements, evenementLigne, 1);
+                String questionEvenement;
+                int questionLigne;
+
+                do{ //trouver une question liée a cet evenement
+                    questionLigne = StringToInt(getCell(questions, (int)(random()*(lignesCSV(questions)-1))+1, 0));
+                    questionEvenement = getCell(questions, questionLigne, 4);
+                }while(!(equals(questionEvenement, evenement)));  
+                Tcréer[i][j] = newContenuCases(descriptionEvenement, 
+                                getCell(questions, questionLigne, 2), 
+                                StringToInt(getCell(questions, questionLigne, 3)),
+                                StringToInt(getCell(questions, questionLigne, 5)));
+            }
+        }
         return Tcréer;
     }
 
     String[][] remplirTab(String[][] tab){
         for(int i = 0; i<length(tab,1);i++){
             for(int j = 0; j<length(tab,2);j++){
-                tab[i][j] = "   ";
+                tab[i][j] = caseAffichage;
             }
         }
         return tab;
     }
 
-    void placerJoueur(String[][] tab, int nbJoueurs){
-        if(nbJoueurs == 1){
-            tab[2][0] = rgb(255,0,0,false) + "   " + RESET;
+    void placerJoueurs(String[][] tab){
+        if(length(ensembleJoueur) == 1){
+            tab[2][0] = rgb(255,0,0,false) + caseAffichage + RESET;
         }
-        if(nbJoueurs == 2){
-            tab[1][0] = rgb(255,0,0,false) + "   " + RESET;
-            tab[3][0] = rgb(0,0,255,false) + "   " + RESET;
+        if(length(ensembleJoueur) == 2){
+            tab[1][0] = rgb(255,0,0,false) + caseAffichage + RESET;
+            tab[3][0] = rgb(0,0,255,false) + caseAffichage + RESET;
         }
-        if(nbJoueurs == 3){
-            tab[0][0] = rgb(255,0,0,false) + "   " + RESET;
-            tab[2][0] = rgb(0,0,255,false) + "   " + RESET;
-            tab[4][0] = rgb(0,255,0,false) + "   " + RESET;;
+        if(length(ensembleJoueur) == 3){
+            tab[0][0] = rgb(255,0,0,false) + caseAffichage + RESET;
+            tab[2][0] = rgb(0,0,255,false) + caseAffichage + RESET;
+            tab[4][0] = rgb(0,255,0,false) + caseAffichage + RESET;;
         }
-        if(nbJoueurs == 4){
-            tab[0][0] = rgb(255,0,0,false) + "   " + RESET;
-            tab[1][0] = rgb(0,0,255,false) + "   " + RESET;          
-            tab[2][0] = rgb(0,255,0,false) + "   " + RESET;
-            tab[3][0] = rgb(255,255,255,false) + "   " + RESET;
+        if(length(ensembleJoueur) == 4){
+            tab[0][0] = rgb(255,0,0,false) + caseAffichage + RESET;
+            tab[1][0] = rgb(0,0,255,false) + caseAffichage + RESET;          
+            tab[2][0] = rgb(0,255,0,false) + caseAffichage + RESET;
+            tab[3][0] = rgb(255,255,255,false) + caseAffichage + RESET;
         }
     }
 
@@ -545,32 +584,26 @@ int joueurActu = 0; //joueur actuel
     }
 
     void updateTab(int uneCase){
-        println("1 : ");
-        println(ensembleJoueur[joueurActu].score);
-        println(ensembleJoueur[joueurActu].posX);
         tableauDeJeu[uneCase-1][ensembleJoueur[joueurActu].score] = rgb(ensembleJoueur[joueurActu].r,
                                                         ensembleJoueur[joueurActu].v,
                                                         ensembleJoueur[joueurActu].b,false) 
-                                                        + "   " + RESET; 
-        println("2 : ");
-        tableauDeJeu[ensembleJoueur[joueurActu].posX][ensembleJoueur[joueurActu].score-1] = " ? ";
-        println("3 : ");
-        ensembleJoueur[joueurActu].posX = uneCase;
-        println("4 : ");
+                                                        + caseAffichage + RESET; 
+        tableauDeJeu[ensembleJoueur[joueurActu].posX][ensembleJoueur[joueurActu].score-1] = caseAffichage;
+        ensembleJoueur[joueurActu].posX = uneCase-1;
     }
 //-------------autre-----------------------------------
 
-    boolean verifQuestion(String saisie, int n, CSVFile questions){
-    if(equals(getCell(questions, n, 3),saisie)){
-        if(ensembleJoueur[joueurActu].score != 9){
-            println("Bien joué messager " + ensembleJoueur[joueurActu].nom + ", tu peux continuer ton chemin !");
+    boolean verifQuestion(int réponse, String saisie){
+        if(réponse == StringToInt(saisie)){
+            if(ensembleJoueur[joueurActu].score != 9){
+                println("Bien joué messager " + ensembleJoueur[joueurActu].nom + ", tu peux continuer ton chemin !");
+            }
+            return true;
+        }else{
+            println("Je suis désolé messager " + ensembleJoueur[joueurActu].nom + ", tu vas devoir rester un moment dans cet endroit.");
+            return false;
         }
-        return true;
-    }else{
-        println("Je suis désolé messager " + ensembleJoueur[joueurActu].nom + ", tu vas devoir rester un moment dans cet endroit.");
-        return false;
     }
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////_________  /////////////////////////////////////////////////////////////////
