@@ -1,6 +1,5 @@
 /* 
 TODO : 
-- regler le dernier bug de connection (rater mdp compte x et reussir compte y -> connecté compte x)
 - faire la mecha de temps (avec un coeff bien défini)
 - rédiger et implémenter les règles
 - implémenter la fonction de comptes
@@ -41,17 +40,17 @@ int joueurActu = 0; //joueur actuel
             remplirTab();
             for(int i = 1; i<=length(ensembleJoueur);i++){
                 ligne();
-                println("Connection joueur " + i + " :");
+                box("Connection joueur " + i + " :");
                 ensembleJoueur[i-1] = newJoueur(i,connection(),
                                       rAssociéeAuJoueur(i),
                                       vAssociéeAuJoueur(i),
                                       bAssociéeAuJoueur(i),
                                       posX(i));
                 ligne();
-                println("Joueur " + i + " connecté à " + ensembleJoueur[i-1].nom +  " avec succès !");
+                box("Joueur " + i + " connecté à " + ensembleJoueur[i-1].nom +  " avec succès !");
             }
             int tempsQuestions = tempsQuestions();
-            println("Vous avez mis le temps au mode " + tempsQuestions + ".");
+            box("Vous avez mis le temps au mode " + tempsQuestions + ".");
             contenuChaqueCase = creerTabContenu(5,10);
             tableauDeJeu = creerTab(5,10);
 
@@ -135,14 +134,16 @@ int joueurActu = 0; //joueur actuel
         println("1 : Jouer");
         println("2 : Vos comptes");
         println("3 : Règles");
+        ligne();
         String saisie;
         do{
             print("Choisissez ce que vous voulez faire : ");
             saisie = readString();
-            if(controleSaisieInt(saisie,'3')){
-                //pass
-            }else{
-                println("/!\\ Saisie incorrecte /!\\");
+            if(saisie == "" || !(controleSaisieInt(saisie,'3'))){
+                ligne();
+                box("/!\\ Saisie incorrecte /!\\");
+                ligne();
+                saisie = "9";  
             }
         }while(!(controleSaisieInt(saisie, '3')));
 
@@ -340,20 +341,17 @@ int joueurActu = 0; //joueur actuel
             }
             print("Votre choix : ");
             saisie = readString();
-            if((controleSaisieInt(saisie, intToChar(rowCount(comptes)-1)))){
-                if(!(pasDejaPris(getCell(comptes,StringToInt(saisie),0)))){
-                    ligne();
-                    println("/!\\ Compte déja utilisé /!\\");
-                }
-                //pass
-            }
-            else{
+            if(equals(saisie,"") || !(controleSaisieInt(saisie, intToChar(rowCount(comptes)-1)))){
                 ligne();
-                println("/!\\ Saisie incorrecte /!\\");
+                box("/!\\ Saisie incorrecte /!\\");
+                saisie = "9";
+            }
+            else if(!(pasDejaPris(getCell(comptes,StringToInt(saisie),0)))){
+                ligne();
+                box("/!\\ Compte déja utilisé /!\\");
             }
         }while(!(controleSaisieInt(saisie, intToChar(rowCount(comptes)-1))) ||
                 !(pasDejaPris(getCell(comptes,StringToInt(saisie),0))));
-
 
 
         if(!(equals(getCell(comptes,StringToInt(saisie),0),"Invité"))){
@@ -361,8 +359,8 @@ int joueurActu = 0; //joueur actuel
                 //pass
             }else{
                 ligne();
-                println("/!\\ MDP incorrect /!\\");
-                connection();
+                box("/!\\ MDP incorrect /!\\");
+                saisie = connection();
             }
             return getCell(comptes, StringToInt(saisie), 0);
         }else{
@@ -413,7 +411,7 @@ int joueurActu = 0; //joueur actuel
             saisie = readString();
             if(equals(saisie,"") || !(controleSaisieInt(saisie,'4'))){
                 ligne();
-                println("/!\\ Saisie incorrecte /!\\");
+                box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
             }
         }while(!(controleSaisieInt(saisie, '4')));
@@ -434,11 +432,10 @@ int joueurActu = 0; //joueur actuel
                     "(le temps s'adapte en fonction de la difficulté de la question)");
             print("Votre choix : ");
             saisie = readString();
-            if(controleSaisieInt(saisie,'6')){
-                //pass
-            }else{
+            if(equals(saisie,"") || !(controleSaisieInt(saisie,'6'))){
                 ligne();
-                println("/!\\ Saisie incorrecte /!\\");
+                box("/!\\ Saisie incorrecte /!\\");
+                saisie = "9";
             }
         }while(!(controleSaisieInt(saisie, '6')));
         return StringToInt(saisie);
@@ -461,7 +458,7 @@ int joueurActu = 0; //joueur actuel
                     //pass
             }else{
                 ligne();
-                println("/!\\ Saisie incorrecte /!\\");
+                box("/!\\ Saisie incorrecte /!\\");
             }
         }while(!(decrypterCasesPossibles(casesPossibles, saisie)));
         return StringToInt(saisie);
