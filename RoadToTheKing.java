@@ -2,23 +2,27 @@
 TODO : 
 - regler le dernier bug de connection (rater mdp compte x et reussir compte y -> connecté compte x)
 - faire la mecha de temps (avec un coeff bien défini)
-- commencer le jeu en lui meme
 - rédiger et implémenter les règles
 - implémenter la fonction de comptes
-*/
-
+- changer la verif des cases dispo
+- implémenter la fonction d'objets (simple)
+- implémenter les boss ?
+- avoir pour chaque joueur une pos x et y. Pour pv enlever leur trace.
+*/ 
 
 import extensions.File;
 import extensions.CSVFile;
 class RoadToTheKing extends Program{
 //variables globales
-CSVFile comptes = loadCSV("CSV/comptes.CSV");
-CSVFile dilemme = loadCSV("CSV/dilemmes.CSV",'_');
-CSVFile evenements = loadCSV("CSV/evenements.CSV",'_');
-CSVFile items = loadCSV("CSV/items.CSV",'_');
-CSVFile questions = loadCSV("CSV/questions.CSV",'_');
-CSVFile zones = loadCSV("CSV/zones.CSV",'_');
+final String clear = "\033[H\033[2j";
+final CSVFile comptes = loadCSV("CSV/comptes.CSV");
+final CSVFile dilemme = loadCSV("CSV/dilemmes.CSV",'_');
+final CSVFile evenements = loadCSV("CSV/evenements.CSV",'_');
+final CSVFile items = loadCSV("CSV/items.CSV",'_');
+final CSVFile questions = loadCSV("CSV/questions.CSV",'_');
+final CSVFile zones = loadCSV("CSV/zones.CSV",'_');
 Joueur[] ensembleJoueur;
+String[][] tableauDeJeu;
 Partie partie;
 int nbJoueurs;
 int joueur = 0; //joueur actuel
@@ -37,18 +41,25 @@ int joueur = 0; //joueur actuel
             for(int i = 1; i<=nbJoueurs;i++){
                 ligne();
                 println("Connection joueur " + i + " :");
-                ensembleJoueur[i-1] = newJoueur(i,connection());
-                
+                ensembleJoueur[i-1] = newJoueur(i,connection(),
+                                      rAssociéeAuJoueur(i),
+                                      vAssociéeAuJoueur(i),
+                                      bAssociéeAuJoueur(i));
                 ligne();
                 println("Joueur " + i + " connecté à " + ensembleJoueur[i-1].nom +  " avec succès !");
             }
             int tempsQuestions = tempsQuestions();
             println("Vous avez mis le temps au mode " + tempsQuestions + ".");
+            tableauDeJeu = creerTab(5,10);
+
             while(scoreMax(nbJoueurs) < 10){
-                joueur = (joueur + 1)%nbJoueurs;
                 ligne();
+                afficherTab(tableauDeJeu);
 
                 println("Au tour du messager " + ensembleJoueur[joueur].nom + " !");
+                print("Veuillez choisir votre prochaine case : ");
+                int uneCase = choixCase();
+
                 String zone /*le nom*/ = getCell(zones, (int)(random()*(lignesCSV(zones)-1))+1, 0);
             
                 String evenementZone;
@@ -62,16 +73,11 @@ int joueur = 0; //joueur actuel
                 println(descriptionEvenement);
 
                 String questionEvenement;
-                println("1");
                 int questionLigne;
-                println("2");
 
                 do{
-                    println("3");
                     questionLigne = StringToInt(getCell(questions, (int)(random()*(lignesCSV(questions)-1))+1, 0));
-                    println("4 : " + questionLigne);
                     questionEvenement = getCell(questions, questionLigne, 4);
-                    println("5 : " + questionEvenement + " | " + evenement);
                 }while(!(equals(questionEvenement, evenement)));  
                 
                 String question = getCell(questions, questionLigne, 2);
@@ -82,7 +88,9 @@ int joueur = 0; //joueur actuel
                 String reponse = readString();
                 if(verifQuestion(reponse,questionLigne,questions)){
                     ensembleJoueur[joueur].score = ensembleJoueur[joueur].score + 1;
+                    updateTab(uneCase);
                 }
+                joueur = (joueur + 1)%nbJoueurs;
 
             }
             ligne();
@@ -177,11 +185,44 @@ int joueur = 0; //joueur actuel
     int lignesCSV(CSVFile f){
         return rowCount(f);
     }
+
+    int rAssociéeAuJoueur(int joueur){
+        if(joueur == 1 || joueur == 4){
+            return 255;
+        }else{
+            return 0;
+        }
+    }
+    int vAssociéeAuJoueur(int joueur){
+        if(joueur == 2 || joueur == 4){
+            return 255;
+        }else{
+            return 0;
+        }
+    }
+    int bAssociéeAuJoueur(int joueur){
+        if(joueur == 3 || joueur == 4){
+            return 255;
+        }else{
+            return 0;
+        }
+    }
 //-------------convertions-----------------------------------------------------------------------------
     int StringToInt(String entree){
-        char result = charAt(entree,0);
-        int trueResult = result - '0';
-        return trueResult;
+        if(length(entree) == 1){
+            return charAt(entree,0) - '0';
+        }
+        else if(length(entree) == 2){
+            int dizaine = charAt(entree,0) * 10;
+            return dizaine + charAt(entree,1) - '0';
+        }
+        else if(length(entree) == 3){
+            int centaine = charAt(entree,0) * 100;
+            int dizaine = charAt(entree,1) * 10;
+            return centaine + dizaine + charAt(entree,2) - '0';
+        }else{
+            return -1;
+        }
     }
 
     char intToChar(int entree){
@@ -189,10 +230,13 @@ int joueur = 0; //joueur actuel
     }
     
 //-------------creation types-----------------------------------------------------------------------------
-    Joueur newJoueur(int jno, String nom){
+    Joueur newJoueur(int jno, String nom, int r, int v, int b){
         Joueur j = new Joueur();
         j.jno = jno;
         j.nom = nom;
+        j.r = r;
+        j.v = v;
+        j.b = b;
         return j;
     }
 
@@ -276,7 +320,7 @@ int joueur = 0; //joueur actuel
 
     void remplirTab(){ //remplir tab ensemble joueur pour pv le lire
         for(int i = 0; i < length(ensembleJoueur);i++){
-            ensembleJoueur[i] = newJoueur(i+1,"vide");
+            ensembleJoueur[i] = newJoueur(i+1,"vide",0,0,0);
         }
     }
 
@@ -325,6 +369,37 @@ int joueur = 0; //joueur actuel
         return StringToInt(saisie);
     }
 
+    int choixCase(){
+        String saisie;
+        String casesPossibles = "";
+        do{
+            print("Choisissez votre prochaine case (");
+            for(int i = 0; i < length(tableauDeJeu,1);i++){
+                if(equals(tableauDeJeu[i][ensembleJoueur[joueur].score+1],"   ")){
+                    print(i+1 + " ou ");
+                    casesPossibles = "" + (i+1) + ",";
+                }
+            }
+            print("commandes externes) : ");
+            saisie = readString();
+            if(decrypterCasesPossibles(casesPossibles, saisie)){
+                    //pass
+            }else{
+                ligne();
+                println("/!\\ Saisie incorrecte /!\\");
+            }
+        }while(!(decrypterCasesPossibles(casesPossibles, saisie)));
+        return StringToInt(saisie);
+    }
+
+    boolean decrypterCasesPossibles(String casesPossibles, String saisie){
+        for(int i = 0; i < length(saisie); i++){
+            if(charAt(saisie,i) > '9' || charAt(saisie,i) < '1'){
+                return false;
+            }
+        }
+        return true;
+    } //a refaire. Pas accurate
 
 //-------------gameplay-----------------------------------------------------------------------------
     int scoreMax(int nbJoueurs){
@@ -336,20 +411,42 @@ int joueur = 0; //joueur actuel
         }
         return scoreMax;
     }
-
-    /* int[][] creerTab(int lignes, int colonnes){
-        int [][] Tcréer = new int[lignes][colonnes];
-        placerJoueur(nbJoueurs); 
+//-------------tableau de jeu-----------------------------------
+    String[][] creerTab(int lignes, int colonnes){
+        String [][] Tcréer = new String[lignes][colonnes];
+        Tcréer = remplirTab(Tcréer);
+        placerJoueur(Tcréer,nbJoueurs); 
         return Tcréer;
-    } */
+    }
 
-    void dessineContenuCase(int m){
-        print('|');
-        for(int j=0;j<m;j++){
-            print("   ");
-            print('|');
+    String[][] remplirTab(String[][] tab){
+        for(int i = 0; i<length(tab,1);i++){
+            for(int j = 0; j<length(tab,2);j++){
+                tab[i][j] = "   ";
+            }
         }
-        println("");
+        return tab;
+    }
+
+    void placerJoueur(String[][] tab, int nbJoueurs){
+        if(nbJoueurs == 1){
+            tab[(int)random()*4][0] = rgb(255,0,0,false) + "   " + RESET;
+        }
+        if(nbJoueurs == 2){
+            tab[(int)random()*2][0] = rgb(255,0,0,false) + "   " + RESET;
+            tab[(int)random()*2+2][0] = rgb(0,0,255,false) + "   " + RESET;
+        }
+        if(nbJoueurs == 3){
+            tab[0][0] = rgb(255,0,0,false) + "   " + RESET;
+            tab[1][0] = rgb(0,0,255,false) + "   " + RESET;
+            tab[(int)random()*2+2][0] = rgb(0,255,0,false) + "   " + RESET;;
+        }
+        if(nbJoueurs == 4){
+            tab[0][0] = rgb(255,0,0,false) + "   " + RESET;
+            tab[1][0] = rgb(0,0,255,false) + "   " + RESET;          
+            tab[2][0] = rgb(0,255,0,false) + "   " + RESET;
+            tab[3][0] = rgb(255,255,255,false) + "   " + RESET;
+        }
     }
 
     void dessineBordCase (int m){
@@ -361,17 +458,36 @@ int joueur = 0; //joueur actuel
         println("");
     }
 
-    void afficherTab(int[][] t) {
+    void dessineContenuCase(int m, int ligne, String[][] tab){
+        print('|');
+        for(int col=0; col<m; col++){
+            print(tab[ligne][col]);
+            print('|');
+        }
+        println("");
+    }
+
+    void afficherTab(String[][] t) {
         for(int i=0;i < length(t,1);i++){
             dessineBordCase(length(t,2));
-            dessineContenuCase(length(t,2));
+            dessineContenuCase(length(t,2),i,t);
         }
         dessineBordCase(length(t,2));
     }
 
+    void updateTab(int uneCase){
+        tableauDeJeu [uneCase-1][ensembleJoueur[joueur].score] = rgb(ensembleJoueur[joueur].r,
+                                                        ensembleJoueur[joueur].v,
+                                                        ensembleJoueur[joueur].b,false) 
+                                                        + "   " + RESET; 
+    }
+//-------------autre-----------------------------------
+
     boolean verifQuestion(String saisie, int n, CSVFile questions){
     if(equals(getCell(questions, n, 3),saisie)){
-        println("Bien joué messager " + ensembleJoueur[joueur].nom + ", tu peux continuer ton chemin !");
+        if(ensembleJoueur[joueur].score != 9){
+            println("Bien joué messager " + ensembleJoueur[joueur].nom + ", tu peux continuer ton chemin !");
+        }
         return true;
     }else{
         println("Je suis désolé messager " + ensembleJoueur[joueur].nom + ", tu vas devoir rester un moment dans cet endroit.");
@@ -435,8 +551,8 @@ int joueur = 0; //joueur actuel
         Joueur j = new Joueur();
         j.jno = 3;
         j.nom = "test";
-        assertEquals(newJoueur(3,"test").jno,j.jno);
-        assertEquals(newJoueur(3,"test").nom,j.nom);
+        assertEquals(newJoueur(3,"test",0,0,0).jno,j.jno);
+        assertEquals(newJoueur(3,"test",0,0,0).nom,j.nom);
     }
 
     void test_newPartie(){

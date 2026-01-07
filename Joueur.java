@@ -10,4 +10,7 @@ class Joueur{
     int pv = 3;
     boolean insensibleALaGlace = false;
     boolean bloqué = false;
+    int r;
+    int v;
+    int b; //couleur du joueur
 }
