@@ -444,34 +444,54 @@ int joueurActu = 0; //joueur actuel
     int choixCase(){
         String saisie;
         String casesPossibles = "";
+        String texte = "Choisissez votre prochaine case (";
         do{
-            print("Choisissez votre prochaine case (");
             for(int i = 0; i < length(tableauDeJeu,1);i++){
                 if(equals(tableauDeJeu[i][ensembleJoueur[joueurActu].score+1],caseAffichage)){
-                    print(i+1 + " ou ");
-                    casesPossibles = "" + (i+1) + ",";
+                    if(i == ensembleJoueur[joueurActu].posX ||
+                        i == ensembleJoueur[joueurActu].posX-1 ||
+                        i == ensembleJoueur[joueurActu].posX+1){
+                        texte = texte + (i+1) + ", ";
+                        casesPossibles = casesPossibles + (i+1);
+                    }
                 }
             }
-            print("commandes externes) : ");
+            texte = texte + ("t, s, u) ou \"i\" si vous êtes perdus : ");
+            box(texte);
             saisie = readString();
-            if(decrypterCasesPossibles(casesPossibles, saisie)){
-                    //pass
-            }else{
+            if(equals(saisie,"") || !(decrypterCasesPossibles(casesPossibles, saisie))){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
+                saisie = "9";
+            }
+            else if(commandeExterne(saisie)){
+                //appliquerCommandeExterne(saisie);
+                int cases = choixCase();
             }
         }while(!(decrypterCasesPossibles(casesPossibles, saisie)));
         return StringToInt(saisie);
     }
 
+    boolean commandeExterne(String saisie){
+        if(equals(saisie, "t") ||
+            equals(saisie, "s") ||
+            equals(saisie, "u") ||
+            equals(saisie, "r")){
+            return true;
+        }
+        return false;
+    }
+
     boolean decrypterCasesPossibles(String casesPossibles, String saisie){
-        for(int i = 0; i < length(saisie); i++){
-            if(charAt(saisie,i) > '9' || charAt(saisie,i) < '1'){
-                return false;
+        boolean result = false;
+        int[] chiffres = new int[length(casesPossibles)];
+        for(int i = 0; i < length(casesPossibles); i++){
+            if(chiffres[i] == StringToInt(saisie)){
+                result = true;
             }
         }
-        return true;
-    } //a refaire. Pas accurate
+        return result;
+    }
 
     int calculTempsQuestions(int coeff, int tempsQuestion){
         return tempsQuestion * (coeff * 2);
