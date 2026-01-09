@@ -2,7 +2,6 @@
 TODO : 
 - rédiger et implémenter les règles
 - implémenter la fonction de comptes
-- mettre un truc bloqué remplirCase dispo
 - implémenter la fonction d'objets (simple)
 - implémenter les boss ?
 */
@@ -87,6 +86,9 @@ int rejouer = 3;
         }
 
         //LES COMPTES
+        if (premierChoix == 2){
+            listeCompte();
+        }
 
         //LES REGLES
         /* if(premierChoix == 3){
@@ -121,7 +123,6 @@ int rejouer = 3;
 //-------------premier choix-----------------------------------------------------------------------------
 
     int premierChoix(){
-        int result;
         println("1 : Jouer");
         println("2 : Vos comptes");
         println("3 : Règles");
@@ -138,19 +139,7 @@ int rejouer = 3;
             }
         }while(!(controleSaisieInt(saisie, '3')));
 
-        if(charAt(saisie,0) == '1'){
-            result = 1;
-        }
-        else if(charAt(saisie,0) == '2'){
-            result = 2;
-            println("WIP");
-            premierChoix();
-        }else{
-            result = 3;
-            println("WIP");
-            premierChoix();
-        }
-        return result;
+        return StringToInt(saisie);
     }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -365,6 +354,188 @@ int rejouer = 3;
         return saisie; //...est convertie en nom du compte
     }
 
+    void listeCompte(){
+        String saisie; //chiffre du compte... (voir derniere ligne fonction)
+        do{
+
+            ligne(); //presentation comptes
+            println("Les différents comptes :");
+            for(int i = 1; i < rowCount(comptes)-1;i++){
+                println(" - " + i + " : " + getCell(comptes, i, 0));
+            }
+            println(" - " + (rowCount(comptes)-1) + " : Créer un compte");
+            println(" - " + rowCount(comptes) + " : Revenir en arrière");
+
+            print("Votre choix : "); //choix (chiffre)
+            saisie = readString();
+            if(equals(saisie,"") || !(controleSaisieInt(saisie, intToChar(rowCount(comptes))))){
+                ligne();
+                box("/!\\ Saisie incorrecte /!\\");
+                saisie = "9";
+            }
+        }while(!(controleSaisieInt(saisie, intToChar(rowCount(comptes)-1)))); //on est sur que l'entrée est bonne
+
+        //acces au compte
+        if(StringToInt(saisie) != rowCount(comptes)-1){
+            if(!(connectionMDP(StringToInt(saisie)))){
+                ligne();
+                box("/!\\ MDP incorrect /!\\");
+                listeCompte();
+            }else{
+                choixVerifCompte(saisie);
+            }
+        }
+        else if(StringToInt(saisie) == rowCount(comptes)-1){
+            String[][] nouveauCompte = new String[rowCount(comptes) + 1][columnCount(comptes)];
+            for(int i = 0; i < length(comptes,2)-1; i++){
+                for(int j = 0; j < length(comptes,1)-2;j++){
+                    nouveauCompte[i][j] = getCell(comptes,i,j);
+                }
+            }
+            print("Choisissez le nom de votre compte : ");
+            nouveauCompte[length(nouveauCompte,1)][0] = readString();
+            print("Choisissez le MDP de votre compte : ");
+            nouveauCompte[length(nouveauCompte,1)][1] = readString();
+
+            nouveauCompte[length(nouveauCompte,1)][2] = "0";
+            nouveauCompte[length(nouveauCompte,1)][3] = "0";
+            nouveauCompte[length(nouveauCompte,1)][4] = "0";
+            nouveauCompte[length(nouveauCompte,1)][5] = "0";
+
+        }
+    }
+
+    void choixVerifCompte(String compte){
+        String saisie;
+        do{
+            ligne();
+            box("Bienvenue " + getCell(comptes, StringToInt(compte), 0) + " !");
+            ligne();
+            println("Que voulez vous faire ? :\n" +
+                    "- 1 : regarder vos stats\n" +
+                    "- 2 : changer votre nom\n" +
+                    "- 3 : changer votre mdp\n" +
+                    "- 4 : changer de skin\n" +
+                    "- 5 : revenir en arriere\n" +
+                    "- 6 : supprimer votre compte\n");
+            print("Votre choix : ");
+            saisie = readString();
+            if(equals(saisie,"") || !(controleSaisieInt(saisie,'6'))){
+                ligne();
+                box("/!\\ Saisie incorrecte /!\\");
+                saisie = "9";
+            }
+        }while(!(controleSaisieInt(saisie, '6')));
+
+        if(StringToInt(saisie) == 1){
+            float victoires = StringToInt(getCell(comptes, StringToInt(saisie), 0));
+            float defaites = StringToInt(getCell(comptes, StringToInt(saisie), 4));
+            float wr = victoires/defaites;
+            box("Vous avez gagné " + getCell(comptes, StringToInt(saisie), 4) +
+                " fois et perdu " + getCell(comptes, StringToInt(saisie), 5) + " fois. " +
+                "Pour un total de " + wr + "% de taux de victoires.");
+            print("Entrez pour continuer.");
+            readString();
+            choixVerifCompte(compte);
+
+        }
+
+        if(StringToInt(saisie) == 2){
+            ligne();
+            String[][] lesNoms = new String[rowCount(comptes)][columnCount(comptes)];
+            for(int i = 0; i < length(lesNoms,2)-1;i++){
+                for(int j = 0; j < length(lesNoms,1)-1;j++){
+                    lesNoms[i][j] = getCell(comptes,i,j);
+                }
+            }
+            box("Changer de nom :");
+            print("Nouveau nom : ");
+            String nouveauNom = readString();
+            lesNoms[StringToInt(compte)][0] = nouveauNom;
+            saveCSV(lesNoms, "CSV/comptes.CSV");
+            box("Nom changé avec succès !");
+            choixVerifCompte(compte);
+        }
+
+        if(StringToInt(saisie) == 3){
+            String nouveauMDP;
+            String ConfirmezMDP;
+            do{
+                ligne();
+                String[][] lesMDP = new String[rowCount(comptes)][columnCount(comptes)];
+                for(int i = 0; i < length(lesMDP,2)-1;i++){
+                    for(int j = 0; j < length(lesMDP,1)-1;j++){
+                        lesMDP[i][j] = getCell(comptes,i,j);
+                    }
+                }
+                box("Changer de mot de passe");
+                print("Nouveau mot de passe : ");
+                nouveauMDP = readString();
+                print("Confirmez le mot de passe : ");
+                ConfirmezMDP = readString();
+                if(equals(nouveauMDP, ConfirmezMDP)){
+                    lesMDP[StringToInt(compte)][1] = nouveauMDP;
+                    saveCSV(lesMDP, "CSV/comptes.CSV");
+                    box("Mot de passe changé avec succès !");
+                }else{
+                    box("Les mots de passe ne correspondent pas.");
+                }
+            }while(!(equals(nouveauMDP, ConfirmezMDP)));
+            readString();
+            choixVerifCompte(compte);
+        }
+
+        if(StringToInt(saisie) == 4){
+            println("Fonctionnalité en cours de développement.");
+            readString();
+            choixVerifCompte(compte);
+            /* ligne();
+            box("Changer de skin :");
+            box(lesSkins(getCell(comptes, StringToInt(saisie), 3)));
+            print("Entrez pour continuer.");
+            readString();
+            choixVerifCompte(); */
+        }
+
+        if(StringToInt(saisie) == 5){
+            listeCompte();
+        }
+
+        if(StringToInt(saisie) == 6){
+            ligne();
+            String[][] lesComptes = new String[rowCount(comptes)][columnCount(comptes)];
+            for(int i = 0; i < length(lesComptes,2)-1;i++){
+                for(int j = 0; j < length(lesComptes,1)-1;j++){
+                    lesComptes[i][j] = getCell(comptes,i,j);
+                }
+            }
+            box("Supprimer votre compte :");
+            print("Êtes vous sûr de vouloir supprimer votre compte ? (O/N) : ");
+            String confirmation = readString();
+            if(equals(confirmation,"O")){
+                for(int i = StringToInt(compte); i < rowCount(comptes)-1;i++){
+                    lesComptes[i][0] = getCell(comptes,i+1,0);
+                    lesComptes[i][1] = getCell(comptes,i+1,1);
+                    lesComptes[i][2] = getCell(comptes,i+1,2);
+                    lesComptes[i][3] = getCell(comptes,i+1,3);
+                    lesComptes[i][4] = getCell(comptes,i+1,4);
+                    lesComptes[i][5] = getCell(comptes,i+1,5);
+                }
+
+                for(int j = 0; j < 6;j++){
+                    lesComptes[rowCount(comptes)-1][j] = "";
+                }
+
+                saveCSV(lesComptes, "CSV/comptes.CSV");
+                box("Compte supprimé avec succès.");
+            }else{
+                box("Suppression annulée.");
+            }
+            readString();
+            listeCompte();
+        }
+    }
+
     boolean connectionMDP(int compte){
         boolean result = false;
         print("MDP : ");
@@ -441,7 +612,7 @@ int rejouer = 3;
         String saisie;
         String casesPossibles = "";
         do{
-            String texte = "Choisissez votre prochaine remplirCase (";
+            String texte = "Choisissez votre prochaine case (";
             for(int i = 0; i < length(contenuChaqueCase,1);i++){
                 if(equals(contenuChaqueCase[i][ensembleJoueur[joueurActu].score+1].remplirCase,caseAffichage)){
                     if(i == ensembleJoueur[joueurActu].posX ||
@@ -453,7 +624,13 @@ int rejouer = 3;
                 }
             }
             texte = texte + ("T, S, U) ou \"I\" si vous êtes perdus : ");
-            box(texte);
+            if(length(casesPossibles) > 0){
+                box(texte);
+            }else{
+                box("Vous n'avez nulle part ou aller messager... Prenez un peu de repos.");
+                readString();
+                return -1;
+            }
             saisie = readString();
             if(commandeExterne(saisie)){
                 //appliquerCommandeExterne(saisie);
@@ -501,9 +678,10 @@ int rejouer = 3;
             afficherTab(contenuChaqueCase);
 
             int uneCase = tourDeplacement(); //partie deplacement du tour
-            
-            tourQuestion(tempsQuestions, uneCase); //partie gameplay du tour
-            
+            if(uneCase != -1){
+                tourQuestion(tempsQuestions, uneCase); //partie gameplay du tour
+            }
+
             joueurActu = (joueurActu + 1)%length(ensembleJoueur); //change joueur
         }
 
@@ -515,7 +693,9 @@ int rejouer = 3;
     int tourDeplacement(){
         println("Au tour du messager " + ensembleJoueur[joueurActu].nom + " !");
         int uneCase = choixCase();
-        box(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].evenement);
+        if(uneCase != -1){
+            box(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].evenement);
+        }
         return uneCase;
     }
 
@@ -760,7 +940,116 @@ int rejouer = 3;
 //////////////////////////////|_______| /////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////
+    String lesSkins(String listeDesSkins){
+        String result = "Vous avez débloqué les skins suivants :\n";
+        if(charAt(listeDesSkins,0) == 1){
+            result += "Skin 1 : T\n";
+            // Activer le skin 1
+        }
+        if(charAt(listeDesSkins,1) == 1){
+            result += "Skin 2 : ⩇\n";
+            // Activer le skin 2
+        }
+        if(charAt(listeDesSkins,2) == 1){
+            // Activer le skin 3
+            result += "Skin 3 : ⁝\n";
+        }
+        if(charAt(listeDesSkins,3) == 1){
+            // Activer le skin 4
+            result += "Skin 4 : ⬔\n";
+        }
+        if(charAt(listeDesSkins,4) == 1){
+            // Activer le skin 5
+            result += "Skin 5 : 🗝\n";
+        }
+        if(charAt(listeDesSkins,5) == 1){
+            // Activer le skin 6
+            result += "Skin 6 : ⧖\n";
+        }
+        if(charAt(listeDesSkins,6) == 1){
+            // Activer le skin 7
+            result += "Skin 7 : ⚙\n";
+        }
+        if(charAt(listeDesSkins,7) == 1){
+            // Activer le skin 8
+            result += "Skin 8 : 𝓩\n";
+        }
+        if(charAt(listeDesSkins,8) == 1){
+            // Activer le skin 9
+            result += "Skin 9 : 𝓐\n";
+        }
+        if(charAt(listeDesSkins,9) == 1){
+            // Activer le skin 10
+            result += "Skin 10 : ⚖\n";
+        }
+        if(charAt(listeDesSkins,10) == 1){
+            // Activer le skin 11
+            result += "Skin 11 : ڽ\n";
+        }
+        if(charAt(listeDesSkins,11) == 1){
+            // Activer le skin 12
+            result += "Skin 12 : ﷼\n";
+        }
+        if(charAt(listeDesSkins,12) == 1){
+            // Activer le skin 13
+            result += "Skin 13 : ⚔\n";
+        }
+        if(charAt(listeDesSkins,13) == 1){
+            // Activer le skin 14
+            result += "Skin 14 : ✟\n";
+        }
+        if(charAt(listeDesSkins,14) == 1){
+            // Activer le skin 15
+            result += "Skin 15 : ✠\n";
+        }
+        if(charAt(listeDesSkins,15) == 1){
+            // Activer le skin 16
+            result += "Skin 16 : ☠\n";
+        }
+        if(charAt(listeDesSkins,16) == 1){
+            // Activer le skin 17
+            result += "Skin 17 : ⚡︎\n";
+        }
+        if(charAt(listeDesSkins,17) == 1){
+            // Activer le skin 18
+            result += "Skin 18 : ⌘\n";
+        }
+        if(charAt(listeDesSkins,18) == 1){
+            // Activer le skin 19
+            result += "Skin 19 : ⏀\n";
+        }
+        if(charAt(listeDesSkins,19) == 1){
+            // Activer le skin 20
+            result += "Skin 20 : ⛩\n";
+        }
+        if(charAt(listeDesSkins,20) == 1){
+            // Activer le skin 21
+            result += "Skin 21 : ☯\n";
+        }
+        if(charAt(listeDesSkins,21) == 1){
+            // Activer le skin 22
+            result += "Skin 22 : ✧\n";
+        }
+        if(charAt(listeDesSkins,22) == 1){
+            // Activer le skin 23
+            result += "Skin 23 : ❂ \n";
+        }
+        if(charAt(listeDesSkins,23) == 1){
+            // Activer le skin 24
+            result += "Skin 24 : ☭\n";
+        }
 
+        if(length(result) != 44){
+            result = result + "Soit " + ((length(result)-44)/7) + " skins actuellement débloqués sur 24.";
+        }
+
+        if(length(result) == 44){
+            result = "Vous n'avez aucun skin débloqué...";
+        }
+        return result;
+
+        //101101000010110100001000 soit 24 skins actuellement
+    }
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
