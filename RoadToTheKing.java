@@ -23,79 +23,67 @@ Joueur[] ensembleJoueur; //trouver joueur actu et load les données dans les bon
 ContenuCases[][] contenuChaqueCase; 
 Partie partie;
 int joueurActu = 0; //joueur actuel
+int rejouer = 3;
 
 //-------------programme-----------------------------------------------------------------------------
     void algorithm(){
-        print(clear);
         ecranTitre();
-        print(clear);
         int premierChoix = premierChoix();
 
         //LE JEU
         if(premierChoix == 1){
-            int nbJoueurs = nbJoueurs();
-            println("Cette partie aura " + nbJoueurs + " joueurs.");
-            ensembleJoueur = new Joueur[nbJoueurs];
-            remplirTab();
-            for(int i = 1; i<=length(ensembleJoueur);i++){
-                ligne();
-                box("Connection joueur " + i + " :");
-                ensembleJoueur[i-1] = newJoueur(i,connection(),
-                                      rAssociéeAuJoueur(i),
-                                      vAssociéeAuJoueur(i),
-                                      bAssociéeAuJoueur(i),
-                                      posX(i));
-                ligne();
-                box("Joueur " + i + " connecté à " + ensembleJoueur[i-1].nom +  " avec succès !");
-            }
-            int tempsQuestions = tempsQuestions();
-            box("Vous avez mis le temps au mode " + tempsQuestions + ".");
-            contenuChaqueCase = creerTabContenu(5,11);
-            contenuChaqueCase = placerJoueurs(contenuChaqueCase);
+            int nbJoueurs = -1;
+            int tempsQuestions = -1;
 
-            while(scoreMax(length(ensembleJoueur)) < 10){
-                print(clear);
-                ligne();
-                afficherTab(contenuChaqueCase);
+            while(rejouer == 3 || rejouer == 2){
+                //phase de choix des joueurs
+                nbJoueurs = nbJoueurs();
+                println("Cette partie aura " + nbJoueurs + " joueurs.");
+                ensembleJoueur = new Joueur[nbJoueurs];
+                remplirTab();
 
-                println("Au tour du messager " + ensembleJoueur[joueurActu].nom + " !");
-                int uneCase = choixCase();
-                box(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].evenement);
-                //println("score : " + ensembleJoueur[joueurActu].score + " et remplirCase : " + uneCase); a test si bug
-
-                box("Pressez \"entrée\" pour reveler la question.");
-                readString();
-                //debut timer
-                long debut = getTime();
-                box("Question pour le messager " + 
-                    ensembleJoueur[joueurActu].nom + 
-                    " : " + 
-                    contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question + 
-                    " (Vous avez " + 
-                    calculTempsQuestions(tempsQuestions, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps) + 
-                    " secondes.)");
-                print("Votre réponse : ");
-                String reponse = readString();
-                if(verifQuestion(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].reponse,reponse)){
-                    long fin = getTime();
-                    float tempsPrisMS = (fin - debut);
-                    float tempsPris = tempsPrisMS/1000;
-                    if(tempsQuestions != 6 || calculTempsQuestions(tempsQuestions, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps) < tempsPris){
-                        ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + 1;
-                        updateTab(uneCase);
-                        box("Vous avez mis " + tempsPris + "s à répondre.");
-                    }else if(tempsQuestions != 6){
-                        box("Vous avez mis trop de temps à répondre messager. Soit " + tempsPris + " secondes.");
-                    }
+                //phase de connection des joueurs
+                for(int i = 1; i<=length(ensembleJoueur);i++){
+                    ligne();
+                    box("Connection joueur " + i + " :");
+                    ensembleJoueur[i-1] = newJoueur(i,connection(),
+                                        rAssociéeAuJoueur(i),
+                                        vAssociéeAuJoueur(i),
+                                        bAssociéeAuJoueur(i),
+                                        posX(i));
+                    ligne();
+                    box("Joueur " + i + " connecté à " + ensembleJoueur[i-1].nom +  " avec succès !");
                 }
-                long fin = getTime();
-                //fin timer
-                joueurActu = (joueurActu + 1)%length(ensembleJoueur);
+                if(rejouer != 2){
+                    //phrase de coeff de temps (difficulté)
+                    tempsQuestions = tempsQuestions();
+                    box("Vous avez mis le temps au mode " + tempsQuestions + ".");
+                    contenuChaqueCase = creerTabContenu(5,11);
+                    contenuChaqueCase = placerJoueurs(contenuChaqueCase);
+                }
 
+
+                //le jeu ihi (trop bien)
+                leJeu(tempsQuestions);
             }
-            print(clear);
-            ligne();
-            box("Bien joué ! Le messager " + ensembleJoueur[joueurActu].nom + " a atteint le score de 10 et remporte la partie ! Félicitations !");
+
+            while(rejouer == 1){
+                ensembleJoueur = new Joueur[nbJoueurs];
+                remplirTab();
+                for(int i = 1; i<=length(ensembleJoueur);i++){
+                    ensembleJoueur[i-1] = newJoueur(i,ensembleJoueur[i-1].nom,
+                                        rAssociéeAuJoueur(i),
+                                        vAssociéeAuJoueur(i),
+                                        bAssociéeAuJoueur(i),
+                                        posX(i));
+                }
+                
+                leJeu(tempsQuestions);
+            }
+
+            if(rejouer == 4){
+                println(clear + "merci beaucoup d'avoir joué ! :)");
+            }
         }
 
         //LES COMPTES
@@ -117,6 +105,7 @@ int joueurActu = 0; //joueur actuel
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //-------------ecran titre-----------------------------------------------------------------------------
     void ecranTitre(){
+        print(clear);
         File ecranTitre = newFile("txt/ecranTitre.txt");
         ligne();
         println("Merci de bien vouloir mettre le jeu en plein ecran pour jouer.");
@@ -127,6 +116,7 @@ int joueurActu = 0; //joueur actuel
             println(readLine(ecranTitre));
         }
         readString();
+        print(clear);
     }
 //-------------premier choix-----------------------------------------------------------------------------
 
@@ -503,6 +493,88 @@ int joueurActu = 0; //joueur actuel
     }
     
 //-------------gameplay-----------------------------------------------------------------------------
+
+    void leJeu(int tempsQuestions){
+        while(scoreMax(length(ensembleJoueur)) < 10){
+            print(clear);
+            ligne();
+            afficherTab(contenuChaqueCase);
+
+            int uneCase = tourDeplacement(); //partie deplacement du tour
+            
+            tourQuestion(tempsQuestions, uneCase); //partie gameplay du tour
+            
+            joueurActu = (joueurActu + 1)%length(ensembleJoueur); //change joueur
+        }
+
+        tourVictoire();
+
+        rejouer();
+    }
+
+    int tourDeplacement(){
+        println("Au tour du messager " + ensembleJoueur[joueurActu].nom + " !");
+        int uneCase = choixCase();
+        box(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].evenement);
+        return uneCase;
+    }
+
+    void tourQuestion(int tempsQuestions, int uneCase){
+        box("Pressez \"entrée\" pour reveler la question.");
+        readString();
+        //debut timer
+        long debut = getTime();
+        box("Question pour le messager " + 
+            ensembleJoueur[joueurActu].nom + 
+            " : " + 
+            contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question + 
+            " (Vous avez " + 
+            calculTempsQuestions(tempsQuestions, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps) + 
+            " secondes.)");
+        print("Votre réponse : ");
+        String reponse = readString();
+        if(verifQuestion(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].reponse,reponse)){
+            long fin = getTime();
+            float tempsPrisMS = (fin - debut);
+            float tempsPris = tempsPrisMS/1000;
+            if(tempsQuestions != 6 || calculTempsQuestions(tempsQuestions, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps) < tempsPris){
+                ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + 1;
+                updateTab(uneCase);
+                box("Vous avez mis " + tempsPris + "s à répondre.");
+            }else if(tempsQuestions != 6){
+                box("Vous avez mis trop de temps à répondre messager. Soit " + tempsPris + " secondes.");
+            }
+        }
+        long fin = getTime();
+        //fin timer
+    }
+
+    void tourVictoire(){
+        print(clear);
+        ligne();
+        box("Bien joué ! Le messager " + ensembleJoueur[joueurActu].nom + " a atteint le score de 10 et remporte la partie ! Félicitations !");
+    }
+
+    void rejouer(){
+        String saisie;
+        do{
+        print(" -La partie est finie-\n\n" +
+                    "1 - Rejouer rapide (meme parametres)\n" +
+                    "2 - Rejouer semi-rapide (changer juste les joueurs)\n" +
+                    "3 - Rejouer\n" +
+                    "4 - Quitter le programme\n" +
+                    "Votre choix : ");
+                    saisie = readString();
+            if(equals(saisie,"") || !(controleSaisieInt(saisie,'4'))){
+                ligne();
+                box("/!\\ Saisie incorrecte /!\\");
+                saisie = "9";
+            }
+        }while(!(controleSaisieInt(saisie, '4')));
+        int rejouer = StringToInt(saisie);
+    }
+
+
     int scoreMax(int nbJoueurs){
         int scoreMax = ensembleJoueur[0].score;
         for(int i = 1; i < nbJoueurs;i++){
