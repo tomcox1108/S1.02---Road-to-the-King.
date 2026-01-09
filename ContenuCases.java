@@ -3,4 +3,5 @@ class ContenuCases{
     String question;
     int reponse;
     int temps;
+    String remplirCase = "   ";
 }
