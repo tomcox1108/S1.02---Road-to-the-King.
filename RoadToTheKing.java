@@ -60,7 +60,8 @@ int joueurActu = 0; //joueur actuel
 
                 println("Au tour du messager " + ensembleJoueur[joueurActu].nom + " !");
                 int uneCase = choixCase();
-                box(contenuChaqueCase[ensembleJoueur[joueurActu].score][uneCase].evenement);
+                box(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].evenement);
+                println("score : " + ensembleJoueur[joueurActu].score + " et case : " + uneCase);
 
                 box("Pressez \"entrée\" pour reveler la question.");
                 readString();
@@ -70,20 +71,21 @@ int joueurActu = 0; //joueur actuel
                     ensembleJoueur[joueurActu].nom + 
                     " : " + 
                     contenuChaqueCase[ensembleJoueur[joueurActu].score][uneCase].question + 
-                    "Vous avez " + 
+                    " (Vous avez " + 
                     calculTempsQuestions(tempsQuestions, contenuChaqueCase[ensembleJoueur[joueurActu].score][uneCase].temps) + 
-                    "secondes.");
+                    " secondes.)");
                 print("Votre réponse : ");
                 String reponse = readString();
-                println("1");
                 if(verifQuestion(contenuChaqueCase[ensembleJoueur[joueurActu].score][uneCase].reponse,reponse)){
                     long fin = getTime();
-                    double tempsPris = (fin - debut)/1000;
+                    float tempsMS = (fin - debut);
+                    float tempsPris = tempsMS/1000;
+                    println(fin + " - " + debut + " = " + (fin-debut) + "ms");
                     if(tempsQuestions != 6 || calculTempsQuestions(tempsQuestions, contenuChaqueCase[ensembleJoueur[joueurActu].score][uneCase].temps) < tempsPris){
                         ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + 1;
                         updateTab(uneCase);
                         box("Vous avez mis " + tempsPris + "s à répondre.");
-                    }else{
+                    }else if(tempsQuestions != 6){
                         box("Vous avez mis trop de temps à répondre messager. Soit " + tempsPris + " secondes.");
                     }
                 }
@@ -277,13 +279,13 @@ int joueurActu = 0; //joueur actuel
             return charAt(entree,0) - '0';
         }
         else if(length(entree) == 2){
-            int dizaine = charAt(entree,0) * 10;
-            return dizaine + charAt(entree,1) - '0';
+            int dizaine = (charAt(entree,0) - '0') * 10;
+            return dizaine + (charAt(entree,1) - '0');
         }
         else if(length(entree) == 3){
-            int centaine = charAt(entree,0) * 100;
-            int dizaine = charAt(entree,1) * 10;
-            return centaine + dizaine + charAt(entree,2) - '0';
+            int centaine = (charAt(entree,0) - '0') * 100;
+            int dizaine = (charAt(entree,1) - '0') * 10;
+            return centaine + dizaine + (charAt(entree,2) - '0');
         }else{
             return -1;
         }
@@ -329,17 +331,17 @@ int joueurActu = 0; //joueur actuel
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //-------------parametres-----------------------------------------------------------------------------
     String connection(){
-        String saisie;
+        String saisie; //chiffre du compte... (voir derniere ligne fonction)
         do{
 
-            ligne();
+            ligne(); //presentation comtpes
             println("Les différents comptes :");
             for(int i = 1; i < rowCount(comptes);i++){
                 if(pasDejaPris(getCell(comptes,i,0))){
                     println(i + " : " + getCell(comptes, i, 0));
                 }
             }
-            print("Votre choix : ");
+            print("Votre choix : "); //choix (chiffre)
             saisie = readString();
             if(equals(saisie,"") || !(controleSaisieInt(saisie, intToChar(rowCount(comptes)-1)))){
                 ligne();
@@ -351,22 +353,27 @@ int joueurActu = 0; //joueur actuel
                 box("/!\\ Compte déja utilisé /!\\");
             }
         }while(!(controleSaisieInt(saisie, intToChar(rowCount(comptes)-1))) ||
-                !(pasDejaPris(getCell(comptes,StringToInt(saisie),0))));
+                !(pasDejaPris(getCell(comptes,StringToInt(saisie),0)))); //on est sur que l'entrée est bonne
 
 
-        if(!(equals(getCell(comptes,StringToInt(saisie),0),"Invité"))){
-            if(connectionMDP(StringToInt(saisie))){
-                //pass
-            }else{
+        if(!(equals(getCell(comptes,StringToInt(saisie),0),"Invité"))){ //Compte classique
+            if(!(connectionMDP(StringToInt(saisie)))){
                 ligne();
                 box("/!\\ MDP incorrect /!\\");
                 saisie = connection();
+            }else{
+                saisie = getCell(comptes, StringToInt(saisie), 0);
             }
-            return getCell(comptes, StringToInt(saisie), 0);
-        }else{
-            print("Choisissez votre pseudo : ");
-            return readString();
+        }else{ //Si c'est un invité
+            do{
+                print("Choisissez votre pseudo : ");
+                saisie = readString();
+                if(equals(saisie, "")){
+                    box("/!\\ Saisie incorrecte /!\\");
+                }
+            }while(equals(saisie,""));
         }
+        return saisie; //...est convertie en nom du compte
     }
 
     boolean connectionMDP(int compte){
@@ -444,8 +451,8 @@ int joueurActu = 0; //joueur actuel
     int choixCase(){
         String saisie;
         String casesPossibles = "";
-        String texte = "Choisissez votre prochaine case (";
         do{
+            String texte = "Choisissez votre prochaine case (";
             for(int i = 0; i < length(tableauDeJeu,1);i++){
                 if(equals(tableauDeJeu[i][ensembleJoueur[joueurActu].score+1],caseAffichage)){
                     if(i == ensembleJoueur[joueurActu].posX ||
@@ -456,27 +463,27 @@ int joueurActu = 0; //joueur actuel
                     }
                 }
             }
-            texte = texte + ("t, s, u) ou \"i\" si vous êtes perdus : ");
+            texte = texte + ("T, S, U) ou \"I\" si vous êtes perdus : ");
             box(texte);
             saisie = readString();
-            if(equals(saisie,"") || !(decrypterCasesPossibles(casesPossibles, saisie))){
+            if(commandeExterne(saisie)){
+                //appliquerCommandeExterne(saisie);
+                saisie = "9";
+            }
+            else if(length(saisie) != 1 || !(decrypterCasesPossibles(casesPossibles, saisie))){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
             }
-            else if(commandeExterne(saisie)){
-                //appliquerCommandeExterne(saisie);
-                int cases = choixCase();
-            }
         }while(!(decrypterCasesPossibles(casesPossibles, saisie)));
-        return StringToInt(saisie);
+        return StringToInt(saisie)-1;
     }
 
     boolean commandeExterne(String saisie){
-        if(equals(saisie, "t") ||
-            equals(saisie, "s") ||
-            equals(saisie, "u") ||
-            equals(saisie, "r")){
+        if(equals(saisie, "T") ||
+            equals(saisie, "S") ||
+            equals(saisie, "U") ||
+            equals(saisie, "I")){
             return true;
         }
         return false;
@@ -484,9 +491,8 @@ int joueurActu = 0; //joueur actuel
 
     boolean decrypterCasesPossibles(String casesPossibles, String saisie){
         boolean result = false;
-        int[] chiffres = new int[length(casesPossibles)];
         for(int i = 0; i < length(casesPossibles); i++){
-            if(chiffres[i] == StringToInt(saisie)){
+            if(charAt(casesPossibles,i) == charAt(saisie, 0)){
                 result = true;
             }
         }
@@ -494,7 +500,7 @@ int joueurActu = 0; //joueur actuel
     }
 
     int calculTempsQuestions(int coeff, int tempsQuestion){
-        return tempsQuestion * (coeff * 2);
+        return tempsQuestion * coeff + 20;
     }
     
 //-------------gameplay-----------------------------------------------------------------------------
@@ -574,34 +580,57 @@ int joueurActu = 0; //joueur actuel
         }
     }
 
-    void dessineBordCase (int m){
-        print("+");
+    void dessineBordCaseHaut (int m){
+        print("╔");
         for(int j =0;j<m;j++){
-            print("---");
-            print('+');
+            print("═══");
+            print('╤');
+        }
+        print("╗");
+        println("");
+    }
+//╔ ╗ ╚ ╝ ═ ║ ╦ ╩ ╠ ╣ ╬.   ╟   ╢.   ┌ ┐ └ ┘ ─ │ ┬ ┴ ├ ┤ ┼ ╤ ╧
+    void dessineContenuCase(int m, int ligne, String[][] tab){
+        print('║');
+        for(int col=0; col<m; col++){
+            print(tab[ligne][col]);
+            print('│');
+        }
+        print('║');
+        println("");
+    }
+
+    void dessineMidCase(int m){
+        print("╟");
+        for(int j =0;j<m;j++){
+            print("───");
+            print('┼');
         }
         println("");
     }
 
-    void dessineContenuCase(int m, int ligne, String[][] tab){
-        print('|');
-        for(int col=0; col<m; col++){
-            print(tab[ligne][col]);
-            print('|');
+    void dessineBordCaseBas (int m){
+        print("╚");
+        for(int j =0;j<m;j++){
+            print("═══");
+            print('╧');
         }
+        print("╝");
         println("");
     }
 
     void afficherTab(String[][] t) {
-        for(int i=0;i < length(t,1);i++){
-            dessineBordCase(length(t,2));
+        dessineBordCaseHaut(length(t,2));
+        dessineContenuCase(length(t,2),1,t);
+        for(int i=1;i < length(t,1);i++){
+            dessineMidCase(length(t,2));
             dessineContenuCase(length(t,2),i,t);
         }
-        dessineBordCase(length(t,2));
+        dessineBordCaseBas(length(t,2));
     }
 
     void updateTab(int uneCase){
-        tableauDeJeu[uneCase-1][ensembleJoueur[joueurActu].score] = rgb(ensembleJoueur[joueurActu].r,
+        tableauDeJeu[uneCase][ensembleJoueur[joueurActu].score] = rgb(ensembleJoueur[joueurActu].r,
                                                         ensembleJoueur[joueurActu].v,
                                                         ensembleJoueur[joueurActu].b,false) 
                                                         + caseAffichage + RESET; 
@@ -623,9 +652,9 @@ int joueurActu = 0; //joueur actuel
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////_________  /////////////////////////////////////////////////////////////////
-//////////////////////////////|connexion| /////////////////////////////////////////////////////////////////
-//////////////////////////////|_________| /////////////////////////////////////////////////////////////////
+///////////////////////////////_______  /////////////////////////////////////////////////////////////////
+//////////////////////////////|comptes| /////////////////////////////////////////////////////////////////
+//////////////////////////////|_______| /////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
