@@ -1,5 +1,6 @@
 class Joueur{
     int jno;
+    char skin;
     String nom;
     int score = 0;
     boolean protégé = false;
