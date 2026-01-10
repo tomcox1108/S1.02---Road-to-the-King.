@@ -2,12 +2,11 @@
 TODO : 
 - rédiger et implémenter les règles
 - mettre plus de questions aux CSV (plus d'event aussi)
-- gerer le truc de temps infini
 - //implementer la fonction de save a la fin de chaque game
 - implémenter la fonction d'objets (simple)
 - //implémenter les boss ?
-- faire en sorte de choisir la longueur des parties
 - tester les bugs a la fin de la games (new games and stuff)
+- décortiquer les fonctions trop longues (3/4 screen)
 */
 
 import extensions.File;
@@ -15,7 +14,7 @@ import extensions.CSVFile;
 class RoadToTheKing extends Program{
 //variables globales
 final String clear = "\033[H\033[2J\033[3J";
-final CSVFile comptes = loadCSV("CSV/comptes.CSV");
+CSVFile comptes = loadCSV("CSV/comptes.CSV");
 final CSVFile dilemme = loadCSV("CSV/dilemmes.CSV",'_');
 final CSVFile evenements = loadCSV("CSV/evenements.CSV",'_');
 final CSVFile items = loadCSV("CSV/items.CSV",'_');
@@ -34,59 +33,56 @@ int rejouer = 3;
         ecranTitre();
         do{ //boucle pour revenir au premier choix
             int premierChoix = premierChoix();
+            if(rejouer == 4){
+                rejouer = 3;
+            }
 
             //LE JEU
             if(premierChoix == 1){
-                int nbJoueurs = -1;
                 int tempsQuestions = -1;
+                int nbJoueurs = -1;
+                int longueurPartie = -1;
 
                 while(rejouer == 3 || rejouer == 2){
                     //phase de choix des joueurs
                     nbJoueurs = nbJoueurs();
                     println("Cette partie aura " + nbJoueurs + " joueurs.");
                     ensembleJoueur = new Joueur[nbJoueurs];
-                    remplirTab();
+                    ensembleJoueur = remplirTab(ensembleJoueur);
 
                     //phase de connection des joueurs
-                    for(int i = 1; i<=length(ensembleJoueur);i++){
-                        ligne();
-                        box("Connection joueur " + i + " :");
-                        int compteLigne = connection();
-                        ensembleJoueur[i-1] = newJoueur(i,
-                                            charAt(ensembleSkins,StringToInt(getCell(comptes,compteLigne,7))),
-                                            getCell(comptes,compteLigne,0),
-                                            rAssociéeAuJoueur(i),
-                                            vAssociéeAuJoueur(i),
-                                            bAssociéeAuJoueur(i),
-                                            posX(i));
-                        ligne();
-                        box("Joueur " + i + " connecté à " + ensembleJoueur[i-1].nom +  " avec succès !");
-                    }
+                    phaseDeConnection();
+                    
                     if(rejouer != 2){
-                        //phrase de coeff de temps (difficulté)
-                        tempsQuestions = tempsQuestions();
-                        box("Vous avez mis le temps au mode " + tempsQuestions + ".");
-                        contenuChaqueCase = creerTabContenu(5,11);
-                        contenuChaqueCase = placerJoueurs(contenuChaqueCase);
+                        //phase de longueur
+                        longueurPartie = scoreDeVictoire();
+
+                        //phase de coeff de temps (difficulté)
+                        tempsQuestions = coeffTemps();
+
+                        //creer partie
+                        partie = newPartie(tempsQuestions,nbJoueurs,longueurPartie);
                     }
 
 
                     //le jeu ihi (trop bien)
-                    leJeu(tempsQuestions);
+                    leJeu();
                 }
 
                 while(rejouer == 1){
-                    ensembleJoueur = new Joueur[nbJoueurs];
-                    remplirTab();
-                    for(int i = 1; i<=length(ensembleJoueur);i++){
-                        ensembleJoueur[i-1] = newJoueur(i,ensembleJoueur[i-1].skin,ensembleJoueur[i-1].nom,
-                                            rAssociéeAuJoueur(i),
-                                            vAssociéeAuJoueur(i),
-                                            bAssociéeAuJoueur(i),
-                                            posX(i));
+                    Joueur[] ensembleJoueurCopie = new Joueur[nbJoueurs];
+                    ensembleJoueurCopie = remplirTab(ensembleJoueurCopie);
+                    for(int i = 0; i < length(ensembleJoueur);i++){
+                        ensembleJoueurCopie[i].jno = i;
+                        ensembleJoueurCopie[i].skin = ensembleJoueur[i].skin;
+                        ensembleJoueurCopie[i].nom = ensembleJoueur[i].nom;
+                        ensembleJoueurCopie[i].r = ensembleJoueur[i].r;
+                        ensembleJoueurCopie[i].v = ensembleJoueur[i].v;
+                        ensembleJoueurCopie[i].b = ensembleJoueur[i].b;
+                        ensembleJoueurCopie[i].posX = posX(i+1);
                     }
-                    
-                    leJeu(tempsQuestions);
+                    ensembleJoueur = ensembleJoueurCopie;
+                    leJeu();
                 }
 
                 if(rejouer == 5){
@@ -142,19 +138,19 @@ int rejouer = 3;
         println("1 : Jouer");
         println("2 : Vos comptes");
         println("3 : Règles");
-        println("4 : quitter");
+        println("4 : Quitter");
         ligne();
         String saisie;
         do{
             print("Choisissez ce que vous voulez faire : ");
             saisie = readString();
-            if(saisie == "" || !(controleSaisieInt(saisie,'4'))){
+            if(saisie == "" || !(controleSaisieInt(saisie,"4")) || StringToInt(saisie) <= 0){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 ligne();
                 saisie = "9";  
             }
-        }while(!(controleSaisieInt(saisie, '4')));
+        }while(!(controleSaisieInt(saisie, "4")) || StringToInt(saisie) <= 0);
 
         return StringToInt(saisie);
     }
@@ -166,11 +162,9 @@ int rejouer = 3;
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //-------------générales-----------------------------------------------------------------------------
-    boolean controleSaisieInt(String saisie, char max){
+    boolean controleSaisieInt(String saisie, String max){
         boolean result = true;
-        if(length(saisie) > 1 ||
-            charAt(saisie, 0) > max ||
-            charAt(saisie, 0) < '1'){
+        if(StringToInt(saisie) > StringToInt(max) || StringToInt(saisie) == 0){
             result = false;
         }
         return result;
@@ -270,24 +264,25 @@ int rejouer = 3;
     }
 //-------------convertions-----------------------------------------------------------------------------
     int StringToInt(String entree){
-        if(length(entree) == 1){
-            return charAt(entree,0) - '0';
+        int max = 1;
+        for(int i = 1; i< length(entree);i++){
+            max = max * 10;
         }
-        else if(length(entree) == 2){
-            int dizaine = (charAt(entree,0) - '0') * 10;
-            return dizaine + (charAt(entree,1) - '0');
+        int result = 0;
+        int j = 0;
+        for(int i = max ; i>=1; i = i / 10){
+            result = result + charToInt(charAt(entree,j)) * i;
+            j++;
         }
-        else if(length(entree) == 3){
-            int centaine = (charAt(entree,0) - '0') * 100;
-            int dizaine = (charAt(entree,1) - '0') * 10;
-            return centaine + dizaine + (charAt(entree,2) - '0');
-        }else{
-            return -1;
-        }
+        return result;
     }
 
     char intToChar(int entree){
         return (char)(entree + '0');
+    }
+
+    int charToInt(char entree){
+        return entree - '0';
     }
 
     String intToString(int entree){
@@ -307,7 +302,7 @@ int rejouer = 3;
         return j;
     }
 
-    Partie newPartie(double coeff, int nbJoueurs, int score){
+    Partie newPartie(int coeff, int nbJoueurs, int score){
         Partie p = new Partie();
         p.coeffTemps = coeff;
         p.nbJoueurs = nbJoueurs;
@@ -330,7 +325,7 @@ int rejouer = 3;
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //-------------parametres-----------------------------------------------------------------------------
-    int connection(){
+    String connection(){
         String saisie; //chiffre du compte... (voir derniere ligne fonction)
         do{
 
@@ -343,7 +338,7 @@ int rejouer = 3;
             }
             print("Votre choix : "); //choix (chiffre)
             saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie, intToChar(rowCount(comptes)-1)))){
+            if(equals(saisie,"") || !(controleSaisieInt(saisie, intToString(rowCount(comptes)-1))) || StringToInt(saisie) <= 0){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
@@ -352,7 +347,7 @@ int rejouer = 3;
                 ligne();
                 box("/!\\ Compte déja utilisé /!\\");
             }
-        }while(!(controleSaisieInt(saisie, intToChar(rowCount(comptes)-1))) ||
+        }while(!(controleSaisieInt(saisie, intToString(rowCount(comptes)-1)) || StringToInt(saisie) <= 0) ||
                 !(pasDejaPris(getCell(comptes,StringToInt(saisie),0)))); //on est sur que l'entrée est bonne
 
 
@@ -360,7 +355,9 @@ int rejouer = 3;
             if(!(connectionMDP(StringToInt(saisie)))){
                 ligne();
                 box("/!\\ MDP incorrect /!\\");
-                saisie = intToString(connection());
+                saisie = connection();
+            }else{
+                saisie = getCell(comptes,StringToInt(saisie),0);
             }
         }else{ //Si c'est un invité
             do{
@@ -369,11 +366,53 @@ int rejouer = 3;
                 if(equals(saisie, "")){
                     box("/!\\ Saisie incorrecte /!\\");
                 }
-            }while(equals(saisie,""));
+                else if(quelLigne(saisie) != -1){
+                    box("Un compte existe deja à ce nom ! Veuillez changer.");
+                }
+            }while(equals(saisie,"") ||
+                    quelLigne(saisie) != -1);
         }
-        return StringToInt(saisie); //...est convertie en nom du compte
+        return saisie; //...est convertie en nom du compte
     }
 
+    void phaseDeConnection(){
+        for(int i = 1; i<=length(ensembleJoueur);i++){
+            ligne();
+            box("Connection joueur " + i + " :");
+            String compteNom = connection();
+            int ligne = quelLigne(compteNom);
+            if(ligne != -1){
+                ensembleJoueur[i-1] = newJoueur(i,
+                                    charAt(ensembleSkins,StringToInt(getCell(comptes,ligne,7))),
+                                    compteNom,
+                                    rAssociéeAuJoueur(i),
+                                    vAssociéeAuJoueur(i),
+                                    bAssociéeAuJoueur(i),
+                                    posX(i));
+                ligne();
+                box("Joueur " + i + " connecté à " + ensembleJoueur[i-1].nom +  " avec succès !");
+            }else{
+                ensembleJoueur[i-1] = newJoueur(i,
+                                    'X',
+                                    compteNom,
+                                    rAssociéeAuJoueur(i),
+                                    vAssociéeAuJoueur(i),
+                                    bAssociéeAuJoueur(i),
+                                    posX(i));
+                ligne();
+                box("Joueur " + i + " connecté à " + ensembleJoueur[i-1].nom +  " avec succès !");
+            }
+        }
+    }
+
+    int quelLigne(String nom){
+        for(int i = 1; i<rowCount(comptes);i++){
+            if(equals(getCell(comptes,i,0),nom)){
+                return i;
+            }
+        }
+        return -1;
+    }
 
     boolean connectionMDP(int compte){
         boolean result = false;
@@ -398,10 +437,11 @@ int rejouer = 3;
         return result;
     }
 
-    void remplirTab(){ //remplir tab ensemble joueur pour pv le lire
-        for(int i = 0; i < length(ensembleJoueur);i++){
-            ensembleJoueur[i] = newJoueur(i+1,' ',"   ",0,0,0,0);
+    Joueur[] remplirTab(Joueur[] ensembleARemplir){ //remplir tab ensemble joueur pour pv le lire
+        for(int i = 0; i < length(ensembleARemplir);i++){
+            ensembleARemplir[i] = newJoueur(i+1,' ',"   ",0,0,0,0);
         }
+        return ensembleARemplir;
     }
 
     int nbJoueurs(){
@@ -415,16 +455,16 @@ int rejouer = 3;
                     "- 4 joueuse(r)s");
             print("Votre choix : ");
             saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie,'4'))){
+            if(equals(saisie,"") || !(controleSaisieInt(saisie,"4")) || StringToInt(saisie) <= 0){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
             }
-        }while(!(controleSaisieInt(saisie, '4')));
+        }while(!(controleSaisieInt(saisie, "4")) || StringToInt(saisie) <= 0);
         return StringToInt(saisie);
     }
 
-    int tempsQuestions(){
+    int coeffTemps(){
         String saisie;
         do{
             ligne();
@@ -438,12 +478,32 @@ int rejouer = 3;
                     "(le temps s'adapte en fonction de la difficulté de la question)");
             print("Votre choix : ");
             saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie,'6'))){
+            if(equals(saisie,"") || !(controleSaisieInt(saisie,"6")) || StringToInt(saisie) <= 0){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
             }
-        }while(!(controleSaisieInt(saisie, '6')));
+        }while(!(controleSaisieInt(saisie, "6")) || StringToInt(saisie) <= 0);
+        box("Vous avez mis le temps au mode " + saisie + ".");
+        return StringToInt(saisie);
+    }
+
+    int scoreDeVictoire(){
+        String saisie;
+        do{
+            ligne();
+            box("Choisissez un nombre de points pour gagner (entre 2 et 10) :");
+            print("Votre choix : ");
+            saisie = readString();
+            if(equals(saisie,"") || !(controleSaisieInt(saisie,"10") || StringToInt(saisie) < 2)){
+                ligne();
+                box("/!\\ Saisie incorrecte /!\\");
+                saisie = "11";
+            }
+        }while(!(controleSaisieInt(saisie, "10")) ||
+                StringToInt(saisie) < 2 ||
+                equals(saisie,""));
+        box("Il faudra avoir " + saisie + " points pour gagner.");
         return StringToInt(saisie);
     }
 
@@ -473,15 +533,17 @@ int rejouer = 3;
     
 //-------------gameplay-----------------------------------------------------------------------------
 
-    void leJeu(int tempsQuestions){
-        while(scoreMax(length(ensembleJoueur)) < 10){
+    void leJeu(){
+        contenuChaqueCase = creerTabContenu(5,partie.scoreDeVictoire+1);
+        contenuChaqueCase = placerJoueurs(contenuChaqueCase);
+        while(scoreMax() < partie.scoreDeVictoire){
             print(clear);
             ligne();
             afficherTab(contenuChaqueCase);
 
             int uneCase = tourDeplacement(); //partie deplacement du tour
             if(uneCase != -1){
-                tourQuestion(tempsQuestions, uneCase); //partie gameplay du tour
+                tourQuestion(uneCase); //partie gameplay du tour
             }
             readString();
 
@@ -502,7 +564,7 @@ int rejouer = 3;
         return uneCase;
     }
 
-    void tourQuestion(int tempsQuestions, int uneCase){
+    void tourQuestion(int uneCase){
         box("Pressez \"entrée\" pour reveler la question.");
         readString();
         //debut timer
@@ -510,24 +572,38 @@ int rejouer = 3;
         box("Question pour le messager " + 
             ensembleJoueur[joueurActu].nom + 
             " : " + 
-            contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question + 
-            " (Vous avez " + 
-            calculTempsQuestions(tempsQuestions, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps) + 
-            " secondes.)");
-        print("Votre réponse : ");
-        String reponse = readString();
-        if(verifQuestion(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].reponse,reponse)){
-            long fin = getTime();
-            float tempsPrisMS = (fin - debut);
-            float tempsPris = tempsPrisMS/1000;
-            if(tempsQuestions != 6 || calculTempsQuestions(tempsQuestions, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps) < tempsPris){
-                ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + 1;
-                updateTab(uneCase);
-                box("Vous avez mis " + tempsPris + "s à répondre.");
-            }else if(tempsQuestions != 6){
-                box("Vous avez mis trop de temps à répondre messager. Soit " + tempsPris + " secondes.");
-            }
+            contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question);
+        if(partie.coeffTemps != 6){
+            box("(Vous avez " + 
+                calculTempsQuestions(partie.coeffTemps, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps) + 
+                " secondes.)");
         }
+        String reponse;
+        do{
+            print("Votre réponse : ");
+            reponse = readString();
+            if(equals(reponse,"")){
+                box("/!\\ Saisie incorrecte /!\\");
+            }
+            else if(verifQuestion(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].reponse,reponse)){
+                long fin = getTime();
+                float tempsPrisMS = (fin - debut);
+                float tempsPris = tempsPrisMS/1000;
+                if(partie.coeffTemps != 6 && calculTempsQuestions(partie.coeffTemps, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps) > tempsPris){
+                    if(ensembleJoueur[joueurActu].score < 9){
+                        println("Bien joué messager " + ensembleJoueur[joueurActu].nom + ", tu peux continuer ton chemin !");
+                    }
+                    ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + 1;
+                    updateTab(uneCase);
+                    box("Vous avez mis " + tempsPris + "s à répondre.");
+                }else if(partie.coeffTemps != 6){
+                    box("Vous avez mis trop de temps à répondre messager. Soit " + tempsPris + " secondes.");
+                }else if(partie.coeffTemps == 6){
+                    ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + 1;
+                    updateTab(uneCase);
+                }
+            }
+        }while(equals(reponse,""));
         long fin = getTime();
         //fin timer
     }
@@ -535,7 +611,7 @@ int rejouer = 3;
     void tourVictoire(){
         print(clear);
         ligne();
-        box("Bien joué ! Le messager " + ensembleJoueur[joueurActu].nom + " a atteint le score de 10 et remporte la partie ! Félicitations !");
+        box("Bien joué ! Le messager " + ensembleJoueur[joueurActu].nom + " a atteint le score de " + partie.scoreDeVictoire + " et remporte la partie ! Félicitations !");
     }
 
 
@@ -586,19 +662,19 @@ int rejouer = 3;
                     "5 - Quitter le programme\n" +
                     "Votre choix : ");
                     saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie,'4'))){
+            if(equals(saisie,"") || !(controleSaisieInt(saisie,"5")) || StringToInt(saisie) <= 0){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
             }
-        }while(!(controleSaisieInt(saisie, '4')));
-        int rejouer = StringToInt(saisie);
+        }while(!(controleSaisieInt(saisie, "5")) || StringToInt(saisie) <= 0);
+        rejouer = StringToInt(saisie);
     }
 
 
-    int scoreMax(int nbJoueurs){
+    int scoreMax(){
         int scoreMax = ensembleJoueur[0].score;
-        for(int i = 1; i < nbJoueurs;i++){
+        for(int i = 1; i < partie.nbJoueurs;i++){
             if(ensembleJoueur[i].score > scoreMax){
                 scoreMax = ensembleJoueur[i].score;
             }
@@ -765,9 +841,6 @@ int rejouer = 3;
 
     boolean verifQuestion(int réponse, String saisie){
         if(réponse == StringToInt(saisie)){
-            if(ensembleJoueur[joueurActu].score != 9){
-                println("Bien joué messager " + ensembleJoueur[joueurActu].nom + ", tu peux continuer ton chemin !");
-            }
             return true;
         }else{
             println("Je suis désolé messager " + ensembleJoueur[joueurActu].nom + ", tu vas devoir rester un moment dans cet endroit.");
@@ -796,12 +869,12 @@ int rejouer = 3;
 
             print("Votre choix : "); //choix (chiffre)
             saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie, intToChar(rowCount(comptes))))){
+            if(equals(saisie,"") || !(controleSaisieInt(saisie, intToString(rowCount(comptes)))) || StringToInt(saisie) <= 0){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "99";
             }
-        }while(!(controleSaisieInt(saisie, intToChar(rowCount(comptes))))); //on est sur que l'entrée est bonne
+        }while(!(controleSaisieInt(saisie, intToString(rowCount(comptes)))) || StringToInt(saisie) <= 0); //on est sur que l'entrée est bonne
 
         //acces au compte
         if(StringToInt(saisie) < rowCount(comptes)-1){
@@ -823,22 +896,29 @@ int rejouer = 3;
                     nouveauCompte[i][j] = getCell(comptes,i,j);
                 }
             }
+            String newName = "";
+            String newMDP = "";
             do{
                 print("Choisissez le nom de votre compte : ");
-                nouveauCompte[length(nouveauCompte,1)-2][0] = readString();
-                if(length(nouveauCompte[length(nouveauCompte,1)-2][0]) < 2){
+                newName = readString();
+                nouveauCompte[length(nouveauCompte,1)-2][0] = newName;
+                if(length(newName) < 2){
                     println("Nom trop court. Recommencez. (2 car min)");
-                    readString();
+                }
+                else if(quelLigne(newName) != -1){
+                    println("Ce compte existe deja !");
                 }else{
                     print("Choisissez le MDP de votre compte : ");
-                    nouveauCompte[length(nouveauCompte,1)-2][1] = readString();
-                    if(length(nouveauCompte[length(nouveauCompte,1)-2][1]) < 3){
+                    newMDP = readString();
+                    nouveauCompte[length(nouveauCompte,1)-2][1] = newMDP;
+                    if(length(newMDP) < 3){
                         println("MDP trop court. Recommencez. (3 car min)");
                         readString();
                     }
                 }
-            }while(length(nouveauCompte[length(nouveauCompte,1)-2][0]) < 2 &&
-                    length(nouveauCompte[length(nouveauCompte,1)-2][1]) < 3);
+            }while(length(newName) < 2 ||
+                    length(newMDP) < 3 ||
+                    quelLigne(newName) != -1);
 
             nouveauCompte[length(nouveauCompte,1)-2][2] = "0";
             nouveauCompte[length(nouveauCompte,1)-2][3] = "0";
@@ -850,8 +930,10 @@ int rejouer = 3;
                 nouveauCompte[rowCount(comptes)][j] = getCell(comptes, rowCount(comptes)-1,j);
             }
             saveCSV(nouveauCompte, "CSV/comptes.CSV");
+            comptes = loadCSV("CSV/comptes.CSV");
             box("Nouveau compte crée avec succès !");
             readString();
+            print(clear);
             listeCompte();
         }
 
@@ -873,17 +955,17 @@ int rejouer = 3;
                     "- 6 : supprimer votre compte\n");
             print("Votre choix : ");
             saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie,'6'))){
+            if(equals(saisie,"") || !(controleSaisieInt(saisie,"6")) || StringToInt(saisie) <= 0){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
             }
-        }while(!(controleSaisieInt(saisie, '6')));
+        }while(!(controleSaisieInt(saisie, "6")) || StringToInt(saisie) <= 0);
 
         if(StringToInt(saisie) == 1){ //voir stats
-            float victoires = StringToInt(getCell(comptes, StringToInt(saisie), 0));
-            float defaites = StringToInt(getCell(comptes, StringToInt(saisie), 4));
-            float wr = victoires/defaites;
+            float victoires = StringToInt(getCell(comptes, StringToInt(saisie), 4));
+            float defaites = StringToInt(getCell(comptes, StringToInt(saisie), 5));
+            float wr = (victoires / (victoires + defaites)) * 100;
             box("Vous avez gagné " + getCell(comptes, StringToInt(saisie), 4) +
                 " fois et perdu " + getCell(comptes, StringToInt(saisie), 5) + " fois. " +
                 "Pour un total de " + wr + "% de taux de victoires.");
@@ -915,11 +997,13 @@ int rejouer = 3;
                 if(length(nouveauNom) < 2){
                     println("Nom trop court. Recommencez. (2 car min)");
                 }
-            }while(length(nouveauNom) < 2);
-
-            nouveauNom = readString();
+                else if(quelLigne(nouveauNom) != -1){
+                    println("Ce compte existe deja !");
+                }
+            }while(length(nouveauNom) < 2 || quelLigne(nouveauNom) != -1);
             lesNoms[StringToInt(compte)][0] = nouveauNom;
             saveCSV(lesNoms, "CSV/comptes.CSV");
+            comptes = loadCSV("CSV/comptes.CSV");
             box("Nom changé avec succès !");
             readString();
             print(clear);
@@ -952,6 +1036,7 @@ int rejouer = 3;
                 if(equals(nouveauMDP, ConfirmezMDP)){
                     lesMDP[StringToInt(compte)][1] = nouveauMDP;
                     saveCSV(lesMDP, "CSV/comptes.CSV");
+                    comptes = loadCSV("CSV/comptes.CSV");
                     box("Mot de passe changé avec succès !");
                 }else{
                     box("Les mots de passe ne correspondent pas.");
@@ -983,8 +1068,9 @@ int rejouer = 3;
                     lesSkins[i][j] = getCell(comptes,i,j);
                 }
             }
-            lesSkins[StringToInt(compte)][7] = choisirSkin;
+            lesSkins[StringToInt(compte)][7] = intToString(StringToInt(choisirSkin)-1);
             saveCSV(lesSkins, "CSV/comptes.CSV");
+            comptes = loadCSV("CSV/comptes.CSV");
             box("Skin changé avec succès !");
             readString();
             print(clear);
@@ -1009,7 +1095,6 @@ int rejouer = 3;
             String confirmation = readString();
             if(equals(confirmation,"O")){
                 for(int i = StringToInt(compte); i < length(lesComptes,1);i++){
-                    print("A");
                     lesComptes[i][0] = getCell(comptes,i+1,0);
                     lesComptes[i][1] = getCell(comptes,i+1,1);
                     lesComptes[i][2] = getCell(comptes,i+1,2);
@@ -1019,6 +1104,7 @@ int rejouer = 3;
                 }
 
                 saveCSV(lesComptes, "CSV/comptes.CSV");
+                comptes = loadCSV("CSV/comptes.CSV");
                 box("Compte supprimé avec succès.");
             }else{
                 box("Suppression annulée.");
@@ -1079,17 +1165,21 @@ int rejouer = 3;
 
 //-------------générales-----------------------------------------------------------------------------
     void test_controleSaisieInt(){
-        assertTrue(controleSaisieInt("2", '3'));
-        assertFalse(controleSaisieInt("4",'3'));
-        assertFalse(controleSaisieInt("-1",'3'));
-        assertFalse(controleSaisieInt("0",'3'));
-        assertFalse(controleSaisieInt("abcd",'3'));
+        assertTrue(controleSaisieInt("2", "3"));
+        assertTrue(controleSaisieInt("1","3"));
+        assertTrue(controleSaisieInt("3","3"));
+        assertFalse(controleSaisieInt("4","3"));
+        assertFalse(controleSaisieInt("0","3"));
 
     }
 
     void test_StringToInt(){
         assertEquals(StringToInt("120"),120);
+        assertEquals(StringToInt("12345"),12345);
+        assertEquals(StringToInt("13"),13);
         assertEquals(StringToInt("9"),9);
+        assertEquals(StringToInt("520"),520);
+        assertEquals(StringToInt("416516198"),416516198);
         assertEquals(StringToInt("053"),53);
     }
     
@@ -1110,12 +1200,12 @@ int rejouer = 3;
 
     void test_newPartie(){
         Partie p = new Partie();
-        p.coeffTemps = 1.0;
+        p.coeffTemps = 1;
         p.nbJoueurs = 3;
         p.scoreDeVictoire = 10;
-        assertEquals(newPartie(1.0,3,10).coeffTemps,p.coeffTemps);
-        assertEquals(newPartie(1.0,3,10).nbJoueurs,p.nbJoueurs);
-        assertEquals(newPartie(1.0,3,10).scoreDeVictoire,p.scoreDeVictoire);
+        assertEquals(newPartie(1,3,10).coeffTemps,p.coeffTemps);
+        assertEquals(newPartie(1,3,10).nbJoueurs,p.nbJoueurs);
+        assertEquals(newPartie(1,3,10).scoreDeVictoire,p.scoreDeVictoire);
     }
 
     void test_controleSaisieSkin(){
@@ -1126,6 +1216,14 @@ int rejouer = 3;
         assertTrue(controleSaisieSkin("15", "1101101000010110100001000"));
         assertFalse(controleSaisieSkin("16", "1101101000010110100001000"));
         assertFalse(controleSaisieSkin("21", "1101101000010110100001000"));
+
+    }
+
+    void test_quelLigne(){
+        assertEquals(quelLigne("Tom"),1);
+        assertEquals(quelLigne("papaz"),-1);
+        assertEquals(quelLigne("boneva"),-1);
+        assertEquals(quelLigne("Robin"),4);
 
     }
 //-------------jouer-----------------------------------------------------------------------------

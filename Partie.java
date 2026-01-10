@@ -1,5 +1,5 @@
 class Partie{
-    double coeffTemps;
+    int coeffTemps;
     int nbJoueurs;
     int scoreDeVictoire;
 }
