@@ -6,6 +6,8 @@ TODO :
 - //implementer la fonction de save a la fin de chaque game
 - implémenter la fonction d'objets (simple)
 - //implémenter les boss ?
+- faire en sorte de choisir la longueur des parties
+- tester les bugs a la fin de la games (new games and stuff)
 */
 
 import extensions.File;
