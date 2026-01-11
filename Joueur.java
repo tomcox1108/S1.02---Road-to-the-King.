@@ -5,12 +5,12 @@ class Joueur{
     int score = 0;
     boolean protégé = false;
     int vitesse = 1;
+    boolean vista = false;
     boolean secondeVie = false;
     boolean visible = true;
-    int degats = 0;
-    int pv = 3;
-    boolean insensibleALaGlace = false;
     boolean bloqué = false;
+    String tools = "000000000000";
+    boolean confus = false;
     int r;
     int v;
     int b; //couleurs du joueur

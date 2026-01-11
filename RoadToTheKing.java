@@ -1,12 +1,10 @@
 /* 
 TODO : 
 - rédiger et implémenter les règles
-- mettre plus de questions aux CSV (plus d'event aussi)
-- //implementer la fonction de save a la fin de chaque game
-- implémenter la fonction d'objets (simple)
+- implementer la fonction de save a la fin de chaque game
+- implémenter la fonction d'objets (simple) -> objets en eux meme fait, commandes externes aussi (sauf usage et aide)
+- implémenter les lectures et usages d'objet (1 fonction / objet)
 - //implémenter les boss ?
-- tester les bugs a la fin de la games (new games and stuff)
-- décortiquer les fonctions trop longues (3/4 screen)
 */
 
 import extensions.File;
@@ -20,7 +18,7 @@ final CSVFile evenements = loadCSV("CSV/evenements.CSV",'_');
 final CSVFile items = loadCSV("CSV/items.CSV",'_');
 final CSVFile questions = loadCSV("CSV/questions.CSV",'_');
 final CSVFile zones = loadCSV("CSV/zones.CSV",'_');
-final String ensembleSkins = "0⩇⁝⬔🗝⧖⚙𝓩𝓐⚖ڽ﷼⚔✟✠☠⚡︎⌘⏀⛩☯✧❂*☭";
+final String ensembleSkins = "◎⩇⁝⬔🗝⧖⚙𝓩𝓐⚖ڽ﷼⚔✟✠☠⚡︎⌘⏀⛩☯✧❂*☭";
 Joueur[] ensembleJoueur; //trouver joueur actu et load les données dans les bonnes cases
 ContenuCases[][] contenuChaqueCase; 
 Partie partie;
@@ -31,7 +29,7 @@ int rejouer = 3;
     void algorithm(){
         boolean quitter = false;
         ecranTitre();
-        do{ //boucle pour revenir au premier choix
+        do{ //boucle pour revenir au premier choix (rejouer = 4)
             int premierChoix = premierChoix();
             if(rejouer == 4){
                 rejouer = 3;
@@ -43,49 +41,18 @@ int rejouer = 3;
                 int nbJoueurs = -1;
                 int longueurPartie = -1;
 
-                while(rejouer == 3 || rejouer == 2){
-                    //phase de choix des joueurs
-                    nbJoueurs = nbJoueurs();
-                    println("Cette partie aura " + nbJoueurs + " joueurs.");
-                    ensembleJoueur = new Joueur[nbJoueurs];
-                    ensembleJoueur = remplirTab(ensembleJoueur);
-
-                    //phase de connection des joueurs
-                    phaseDeConnection();
-                    
-                    if(rejouer != 2){
-                        //phase de longueur
-                        longueurPartie = scoreDeVictoire();
-
-                        //phase de coeff de temps (difficulté)
-                        tempsQuestions = coeffTemps();
-
-                        //creer partie
-                        partie = newPartie(tempsQuestions,nbJoueurs,longueurPartie);
-                    }
-
-
+                while(rejouer == 3 || rejouer == 2){ //rejouer normal/mi rapide
+                    parametres(tempsQuestions, nbJoueurs, longueurPartie);
                     //le jeu ihi (trop bien)
                     leJeu();
                 }
 
-                while(rejouer == 1){
-                    Joueur[] ensembleJoueurCopie = new Joueur[nbJoueurs];
-                    ensembleJoueurCopie = remplirTab(ensembleJoueurCopie);
-                    for(int i = 0; i < length(ensembleJoueur);i++){
-                        ensembleJoueurCopie[i].jno = i;
-                        ensembleJoueurCopie[i].skin = ensembleJoueur[i].skin;
-                        ensembleJoueurCopie[i].nom = ensembleJoueur[i].nom;
-                        ensembleJoueurCopie[i].r = ensembleJoueur[i].r;
-                        ensembleJoueurCopie[i].v = ensembleJoueur[i].v;
-                        ensembleJoueurCopie[i].b = ensembleJoueur[i].b;
-                        ensembleJoueurCopie[i].posX = posX(i+1);
-                    }
-                    ensembleJoueur = ensembleJoueurCopie;
+                while(rejouer == 1){ //rejouer rapide
+                    rejouerRapide();
                     leJeu();
                 }
 
-                if(rejouer == 5){
+                if(rejouer == 5){ //quitter...
                     println(clear + "merci beaucoup d'avoir joué ! :)");
                     quitter = true;
                 }
@@ -104,11 +71,11 @@ int rejouer = 3;
                 }*
             } */
 
+            //QUITTER LE PROGRAMME
             if (premierChoix == 4){
                 quitter = true;
             }
-        }while(quitter == false);
-        
+        }while(quitter == false); 
     }
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////____  /////////////////////////////////////////////////////////////////
@@ -181,10 +148,6 @@ int rejouer = 3;
          print("");
     }
 
-    int lignesCSV(CSVFile f){
-        return rowCount(f);
-    }
-
     int rAssociéeAuJoueur(int joueur){
         if(joueur == 1 || joueur == 4){
             return 255;
@@ -239,7 +202,7 @@ int rejouer = 3;
             if(fin > length(texte)) {
                 fin = length(texte);
             }else{
-            int i = fin;
+            int i = fin - 1;
                 while (i > debut && charAt(texte, i) != ' ') {
                     i = i - 1;
                 }
@@ -288,6 +251,19 @@ int rejouer = 3;
     String intToString(int entree){
         return "" + entree;
     }
+
+    String convertionEnMinute(int secondes){
+        String result = "";
+        int minutes = 0;
+        if(secondes < 60){
+            return "" + secondes;
+        }else{
+            for(int i = 0; i < secondes/60; i++){
+                minutes ++;
+            }
+            return minutes + " minutes et " + secondes%60;
+        }
+    }
     
 //-------------creation types-----------------------------------------------------------------------------
     Joueur newJoueur(int jno, char skin, String nom, int r, int v, int b, int posX){
@@ -310,10 +286,15 @@ int rejouer = 3;
         return p;
     }
 
-    ContenuCases newContenuCases(String event, String question, int reponse, int temps){
+    ContenuCases newContenuCases(String event, String question1, String question2, String question3, String apparitionItem, String descItem, int ligneItem, int reponse, int temps){
         ContenuCases c = new ContenuCases();
         c.evenement = event;
-        c.question = question;
+        c.question1 = question1;
+        c.question2 = question2;
+        c.question3 = question3;
+        c.apparitionItem = apparitionItem;
+        c.descItem = descItem;
+        c.ligneItem = ligneItem;
         c.reponse = reponse;
         c.temps = temps;
         return c;
@@ -325,6 +306,44 @@ int rejouer = 3;
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //-------------parametres-----------------------------------------------------------------------------
+    void parametres(int tempsQuestions, int nbJoueurs, int longueurPartie){
+        //phase de choix des joueurs
+        nbJoueurs = nbJoueurs();
+        println("Cette partie aura " + nbJoueurs + " joueurs.");
+        ensembleJoueur = new Joueur[nbJoueurs];
+        ensembleJoueur = remplirTab(ensembleJoueur);
+
+        //phase de connection des joueurs
+        phaseDeConnection();
+        
+        if(rejouer != 2){
+            //phase de longueur
+            longueurPartie = scoreDeVictoire();
+
+            //phase de coeff de temps (difficulté)
+            tempsQuestions = coeffTemps();
+
+            //creer partie
+            partie = newPartie(tempsQuestions,nbJoueurs,longueurPartie);
+        }
+    }
+
+    void rejouerRapide(){
+        Joueur[] ensembleJoueurCopie = new Joueur[partie.nbJoueurs];
+        ensembleJoueurCopie = remplirTab(ensembleJoueurCopie);
+        for(int i = 0; i < length(ensembleJoueur);i++){
+            ensembleJoueurCopie[i].jno = i;
+            ensembleJoueurCopie[i].skin = ensembleJoueur[i].skin;
+            ensembleJoueurCopie[i].nom = ensembleJoueur[i].nom;
+            ensembleJoueurCopie[i].r = ensembleJoueur[i].r;
+            ensembleJoueurCopie[i].v = ensembleJoueur[i].v;
+            ensembleJoueurCopie[i].b = ensembleJoueur[i].b;
+            ensembleJoueurCopie[i].posX = posX(i+1);
+        }
+        ensembleJoueur = ensembleJoueurCopie;
+    }
+
+
     String connection(){
         String saisie; //chiffre du compte... (voir derniere ligne fonction)
         do{
@@ -542,6 +561,20 @@ int rejouer = 3;
             afficherTab(contenuChaqueCase);
 
             int uneCase = tourDeplacement(); //partie deplacement du tour
+            int chance = (int)(random()*3);
+
+            if(chance == 1){ //une chance sur 3 d'avoir l'item
+                ensembleJoueur[joueurActu].tools = tourItem(ensembleJoueur[joueurActu].tools, uneCase, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].ligneItem);
+                String saisie;
+                do{
+                    print("Voir (T) ou utiliser (U) l'item (rien ou autre pour ignorer) : ");
+                    saisie = readString();
+                    if(commandeExterne(saisie)){
+                        appliquerCommandeExterne(saisie);
+                    }
+                }while(commandeExterne(saisie));
+            }
+            println("\n\n");
             if(uneCase != -1){
                 tourQuestion(uneCase); //partie gameplay du tour
             }
@@ -559,9 +592,24 @@ int rejouer = 3;
         println("Au tour du messager " + ensembleJoueur[joueurActu].nom + " !");
         int uneCase = choixCase();
         if(uneCase != -1){
+            println("\nEvenement :");
             box(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].evenement);
         }
         return uneCase;
+    }
+
+    String tourItem(String toolsListe, int uneCase, int ligneItem){
+        println("\nUn nouvel item ! :");
+        int newItem = charAt(toolsListe, ligneItem)-('0');
+        println("New item : " + newItem);
+        newItem ++;
+        box(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].apparitionItem);
+        if(charAt(toolsListe,ligneItem) != 9){ //sinon ca bug
+            toolsListe = substring(toolsListe, 0, ligneItem) + 
+                        intToChar(newItem) +
+                        substring(toolsListe, ligneItem+1, length(toolsListe));
+        }
+        return toolsListe;
     }
 
     void tourQuestion(int uneCase){
@@ -569,13 +617,20 @@ int rejouer = 3;
         readString();
         //debut timer
         long debut = getTime();
+        String question;
+        if(ensembleJoueur[joueurActu].vista){
+            question = contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question1;
+        }else{
+            question = questionAleatoire(uneCase);
+        }
+        println("Question :");
         box("Question pour le messager " + 
             ensembleJoueur[joueurActu].nom + 
             " : " + 
-            contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question);
+            question);
         if(partie.coeffTemps != 6){
             box("(Vous avez " + 
-                calculTempsQuestions(partie.coeffTemps, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps) + 
+                convertionEnMinute(calculTempsQuestions(partie.coeffTemps, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps)) + 
                 " secondes.)");
         }
         String reponse;
@@ -606,6 +661,26 @@ int rejouer = 3;
         }while(equals(reponse,""));
         long fin = getTime();
         //fin timer
+    }
+
+    String questionAleatoire(int uneCase){
+        int choix = (int)(random()*3);
+        if(choix == 0){
+            return contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question1;
+        }
+        if(choix == 1){
+            return contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question2;
+        }
+        if(choix == 2){
+            return contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question3;
+        }
+        println("Bug : " + choix);
+        return "bug";
+    }
+
+    int testAleatoire(){
+        int test = (int)(random()*3+1);
+        return test;
     }
 
     void tourVictoire(){
@@ -639,7 +714,7 @@ int rejouer = 3;
             }
             saisie = readString();
             if(commandeExterne(saisie)){
-                //appliquerCommandeExterne(saisie);
+                appliquerCommandeExterne(saisie);
                 saisie = "9";
             }
             else if(length(saisie) != 1 || !(decrypterCasesPossibles(casesPossibles, saisie))){
@@ -681,36 +756,85 @@ int rejouer = 3;
         }
         return scoreMax;
     }
-//-------------tableau de jeu-----------------------------------
+//-------------fonctions des pouvoirs/tools/items...------------------------------------------------------------------
 
-    ContenuCases[][] creerTabContenu(int lignes, int colonnes, char rien){
-        ContenuCases[][] Tcréer = new ContenuCases[lignes][colonnes];
-        for(int i = 0; i < lignes; i++){
-            for(int j = 0; j < colonnes; j++){
-                String zone /*le nom de la zone*/ = getCell(zones, (int)(random()*(lignesCSV(zones)-1))+1, 0);
-                String evenementZone;
-                int evenementLigne;
-                do{ //trouver un evenement possible dans cette zone
-                    evenementLigne = StringToInt(getCell(evenements, (int)(random()*(lignesCSV(evenements)-1))+1, 0));
-                    evenementZone = getCell(evenements, evenementLigne, 3);
-                }while(!(equals(evenementZone, zone))); 
-                String descriptionEvenement = getCell(evenements, evenementLigne, 2);
-                String evenement /*le nom*/ = getCell(evenements, evenementLigne, 1);
-                String questionEvenement;
-                int questionLigne;
+    void appliquerCommandeExterne(String saisie){
+        if(equals(saisie,"T")){
+            afficherTools(ensembleJoueur[joueurActu].tools);
+        }
+        else if(equals(saisie,"S")){
+            afficherStats(ensembleJoueur[joueurActu]);
+        }
+        else if(equals(saisie,"U")){
+            //utiliserTool(ensembleJoueur[joueurActu].tools);
+        }
+        else if(equals(saisie,"I")){
+            //afficherRègles();
+        }
+    }
 
-                do{ //trouver une question liée a cet evenement
-                    questionLigne = StringToInt(getCell(questions, (int)(random()*(lignesCSV(questions)-1))+1, 0));
-                    questionEvenement = getCell(questions, questionLigne, 4);
-                }while(!(equals(questionEvenement, evenement)));  
-                Tcréer[i][j] = newContenuCases(descriptionEvenement, 
-                                getCell(questions, questionLigne, 2), 
-                                StringToInt(getCell(questions, questionLigne, 3)),
-                                StringToInt(getCell(questions, questionLigne, 5)));
+    void afficherTools(String tools){
+        int compteur = 0;
+        for(int i = 0; i < length(tools); i++){
+            compteur = compteur + charToInt(charAt(tools,i));
+        }
+        ligne();
+        if(compteur == 0){
+            box("Vous n'avez aucun item...");
+        }else{
+            box("Voici les items que vous possedez : ");
+            for(int i = 0; i < length(tools); i++){
+                if(charAt(tools,i) != '0'){
+                    println(getCell(items,i,0) + " : "); //nom"
+                    box(getCell(items,i,2));  //desc    
+                    println("(Possédés : " + charAt(tools,i) + ")\n\n");//quantité
+                }
             }
         }
-        return Tcréer;
     }
+
+    void afficherStats(Joueur joueur){
+        box("Messager " + joueur.nom + " !");
+        println("Actuellement, vous :");
+        if(!(joueur.protégé)){
+            print("N'etes pas protégé du danger");
+            if(!(joueur.bloqué)){
+                println(".\nMais vous n'etes pas bloqué !");
+            }else{
+                println(",\net vous êtes actuellement bloqué...");
+            }
+        }else{
+            println("Êtes protégé du danger");
+            if(!(joueur.bloqué)){
+                println("et vous n'etes actuellement pas bloqué !");
+            }else{
+                println("mais vous êtes actuellement bloqué...");
+            }
+        }
+        print("Vous pouvez avancer de " + joueur.vitesse + " case par tour");
+        if(!(joueur.secondeVie)){
+            println(",");
+            println("mais vous n'avez qu'une seule chance par question !");
+        }else{
+            println("\net vous avez en plus de ca une seconde chance lors de votre prochaine erreur !");
+        }
+        print("À et d'ailleurs, vous ");
+        if(joueur.confus){
+            println("êtes confus.");
+        }else{
+            println("n'êtes pas confus.");
+        }
+        int compteur = 0;
+        for(int i = 0; i < length(joueur.tools); i++){
+            compteur = compteur + charToInt(charAt(joueur.tools,i));
+        }
+        println("De plus, vous possédez " + compteur + " items.");
+    }
+
+
+
+
+//-------------tableau de jeu--------------------------------------------------------------------------
 
     ContenuCases[][] creerTabContenu(int lignes, int colonnes){
         ContenuCases[][] Tcreer = new ContenuCases[lignes][colonnes];
@@ -718,14 +842,14 @@ int rejouer = 3;
             for(int j = 0; j < colonnes; j++){
 
                 // Tirage de la zone
-                int ligneZone = (int)(random() * (lignesCSV(zones) - 1)) + 1;
+                int ligneZone = (int)(random() * (rowCount(zones) - 1)) + 1;
                 String zone = getCell(zones, ligneZone, 0);
 
                 // Tirage d’un événement COMPATIBLE avec la zone
                 int ligneEvenement;
                 String zoneEvenement;
                 do{
-                    ligneEvenement = (int)(random() * (lignesCSV(evenements) - 1)) + 1;
+                    ligneEvenement = (int)(random() * (rowCount(evenements) - 1)) + 1;
                     zoneEvenement = getCell(evenements, ligneEvenement, 3);
                 }while(!equals(zoneEvenement, zone));
 
@@ -736,19 +860,52 @@ int rejouer = 3;
                 int ligneQuestion;
                 String evenementQuestion;
                 do{
-                    ligneQuestion = (int)(random() * (lignesCSV(questions) - 1)) + 1;
+                    ligneQuestion = (int)(random() * (rowCount(questions) - 1)) + 1;
                     evenementQuestion = getCell(questions, ligneQuestion, 4);
                 }while(!equals(evenementQuestion, nomEvenement));
 
+                // Tirage d’une question2 COMPATIBLE avec l’événement
+                int ligneQuestion2;
+                String evenementQuestion2;
+                do{
+                    ligneQuestion2 = (int)(random() * (rowCount(questions) - 1)) + 1;
+                    evenementQuestion2 = getCell(questions, ligneQuestion2, 4);
+                }while(!equals(evenementQuestion2, nomEvenement) ||
+                            ligneQuestion2 == ligneQuestion);
+
+                // Tirage d’une question3 COMPATIBLE avec l’événement
+                int ligneQuestion3;
+                String evenementQuestion3;
+                do{
+                    ligneQuestion3 = (int)(random() * (rowCount(questions) - 1)) + 1;
+                    evenementQuestion3 = getCell(questions, ligneQuestion3, 4);
+                }while(!equals(evenementQuestion3, nomEvenement) || 
+                            ligneQuestion3 == ligneQuestion2 ||
+                            ligneQuestion3 == ligneQuestion);
+
+                // Tirage d’un item COMPATIBLE avec l’événement
+                int ligneItem;
+                String evenementItem;
+                do{
+                    ligneItem = (int)(random() * (rowCount(items) - 1)) + 1;
+                    evenementItem = getCell(items, ligneItem, 6);
+                }while(!equals(evenementItem, nomEvenement));
+
+
                 // Création du contenu
                 Tcreer[i][j] = newContenuCases(
-                    descriptionEvenement,
-                    getCell(questions, ligneQuestion, 2),
-                    StringToInt(getCell(questions, ligneQuestion, 3)),
-                    StringToInt(getCell(questions, ligneQuestion, 5))
-                );
+                                descriptionEvenement,
+                                getCell(questions, ligneQuestion, 2),
+                                getCell(questions, ligneQuestion2, 2),
+                                getCell(questions, ligneQuestion3, 2),
+                                getCell(items, ligneItem, 1),
+                                getCell(items, ligneItem, 2),
+                                ligneItem,
+                                StringToInt(getCell(questions, ligneQuestion, 3)),
+                                StringToInt(getCell(questions, ligneQuestion, 5)));
             }
         }
+        readString();
         return Tcreer;
     }
 
@@ -837,7 +994,7 @@ int rejouer = 3;
         contenuChaqueCase[ensembleJoueur[joueurActu].posX][ensembleJoueur[joueurActu].score-1].remplirCase = "   ";
         ensembleJoueur[joueurActu].posX = uneCase;
     }
-//-------------autre-----------------------------------
+//-------------autre------------------------------------------------------------------------------------------------------
 
     boolean verifQuestion(int réponse, String saisie){
         if(réponse == StringToInt(saisie)){
@@ -856,7 +1013,20 @@ int rejouer = 3;
 //////////////////////////////////////////////////////////////////////////////////////////////////////
     
     void listeCompte(){
-        String saisie; //chiffre du compte... (voir derniere ligne fonction)
+        String saisie = bonneEntree(); //chiffre du compte... (voir derniere ligne fonction)
+        //acces aux comptes
+        if(StringToInt(saisie) < rowCount(comptes)-1){
+            accesAuxComptes(saisie);
+        }
+        //creer un compte
+        else if(StringToInt(saisie) == rowCount(comptes)-1){
+            creerUnCompte(saisie);
+        }
+        print(clear);
+    }
+
+    String bonneEntree(){
+        String saisie;
         do{
 
             ligne(); //presentation comptes
@@ -875,69 +1045,66 @@ int rejouer = 3;
                 saisie = "99";
             }
         }while(!(controleSaisieInt(saisie, intToString(rowCount(comptes)))) || StringToInt(saisie) <= 0); //on est sur que l'entrée est bonne
+        return saisie;
+    }
 
-        //acces au compte
-        if(StringToInt(saisie) < rowCount(comptes)-1){
-            if(!(connectionMDP(StringToInt(saisie)))){
-                ligne();
-                box("/!\\ MDP incorrect /!\\");
-                listeCompte();
-            }else{
-                choixVerifCompte(saisie);
-            }
-        }
-
-        //creer un compte
-        else if(StringToInt(saisie) == rowCount(comptes)-1){
-            
-            String[][] nouveauCompte = new String[rowCount(comptes) + 1][columnCount(comptes)];
-            for(int i = 0; i < rowCount(comptes)-1; i++){
-                for(int j = 0; j < columnCount(comptes);j++){
-                    nouveauCompte[i][j] = getCell(comptes,i,j);
-                }
-            }
-            String newName = "";
-            String newMDP = "";
-            do{
-                print("Choisissez le nom de votre compte : ");
-                newName = readString();
-                nouveauCompte[length(nouveauCompte,1)-2][0] = newName;
-                if(length(newName) < 2){
-                    println("Nom trop court. Recommencez. (2 car min)");
-                }
-                else if(quelLigne(newName) != -1){
-                    println("Ce compte existe deja !");
-                }else{
-                    print("Choisissez le MDP de votre compte : ");
-                    newMDP = readString();
-                    nouveauCompte[length(nouveauCompte,1)-2][1] = newMDP;
-                    if(length(newMDP) < 3){
-                        println("MDP trop court. Recommencez. (3 car min)");
-                        readString();
-                    }
-                }
-            }while(length(newName) < 2 ||
-                    length(newMDP) < 3 ||
-                    quelLigne(newName) != -1);
-
-            nouveauCompte[length(nouveauCompte,1)-2][2] = "0";
-            nouveauCompte[length(nouveauCompte,1)-2][3] = "0";
-            nouveauCompte[length(nouveauCompte,1)-2][4] = "0";
-            nouveauCompte[length(nouveauCompte,1)-2][5] = "0";
-            nouveauCompte[length(nouveauCompte,1)-2][6] = "1000000000000000000000000";
-            nouveauCompte[length(nouveauCompte,1)-2][7] = "0";
-            for(int j = 0; j < length(nouveauCompte, 2);j++){
-                nouveauCompte[rowCount(comptes)][j] = getCell(comptes, rowCount(comptes)-1,j);
-            }
-            saveCSV(nouveauCompte, "CSV/comptes.CSV");
-            comptes = loadCSV("CSV/comptes.CSV");
-            box("Nouveau compte crée avec succès !");
-            readString();
-            print(clear);
+    void accesAuxComptes(String saisie){
+        if(!(connectionMDP(StringToInt(saisie)))){
+            ligne();
+            box("/!\\ MDP incorrect /!\\");
             listeCompte();
+        }else{
+            choixVerifCompte(saisie);
         }
+        
+    }
 
+    void creerUnCompte(String saisie){
+        String[][] nouveauCompte = new String[rowCount(comptes) + 1][columnCount(comptes)];
+        for(int i = 0; i < rowCount(comptes)-1; i++){
+            for(int j = 0; j < columnCount(comptes);j++){
+                nouveauCompte[i][j] = getCell(comptes,i,j);
+            }
+        }
+        String newName = "";
+        String newMDP = "";
+        do{
+            print("Choisissez le nom de votre compte : ");
+            newName = readString();
+            nouveauCompte[length(nouveauCompte,1)-2][0] = newName;
+            if(length(newName) < 2){
+                println("Nom trop court. Recommencez. (2 car min)");
+            }
+            else if(quelLigne(newName) != -1){
+                println("Ce compte existe deja !");
+            }else{
+                print("Choisissez le MDP de votre compte : ");
+                newMDP = readString();
+                nouveauCompte[length(nouveauCompte,1)-2][1] = newMDP;
+                if(length(newMDP) < 3){
+                    println("MDP trop court. Recommencez. (3 car min)");
+                    readString();
+                }
+            }
+        }while(length(newName) < 2 ||
+                length(newMDP) < 3 ||
+                quelLigne(newName) != -1);
+
+        nouveauCompte[length(nouveauCompte,1)-2][2] = "0";
+        nouveauCompte[length(nouveauCompte,1)-2][3] = "0";
+        nouveauCompte[length(nouveauCompte,1)-2][4] = "0";
+        nouveauCompte[length(nouveauCompte,1)-2][5] = "0";
+        nouveauCompte[length(nouveauCompte,1)-2][6] = "1000000000000000000000000";
+        nouveauCompte[length(nouveauCompte,1)-2][7] = "0";
+        for(int j = 0; j < length(nouveauCompte, 2);j++){
+            nouveauCompte[rowCount(comptes)][j] = getCell(comptes, rowCount(comptes)-1,j);
+        }
+        saveCSV(nouveauCompte, "CSV/comptes.CSV");
+        comptes = loadCSV("CSV/comptes.CSV");
+        box("Nouveau compte crée avec succès !");
+        readString();
         print(clear);
+        listeCompte();
     }
 
     void choixVerifCompte(String compte){
@@ -963,156 +1130,176 @@ int rejouer = 3;
         }while(!(controleSaisieInt(saisie, "6")) || StringToInt(saisie) <= 0);
 
         if(StringToInt(saisie) == 1){ //voir stats
-            float victoires = StringToInt(getCell(comptes, StringToInt(saisie), 4));
-            float defaites = StringToInt(getCell(comptes, StringToInt(saisie), 5));
-            float wr = (victoires / (victoires + defaites)) * 100;
-            box("Vous avez gagné " + getCell(comptes, StringToInt(saisie), 4) +
-                " fois et perdu " + getCell(comptes, StringToInt(saisie), 5) + " fois. " +
-                "Pour un total de " + wr + "% de taux de victoires.");
-            box("De plus, vous êtes niveau " + 
-                getCell(comptes, StringToInt(saisie), 2) + 
-                " avec " + 
-                getCell(comptes, StringToInt(saisie), 3) + 
-                "XP.");
-            print("Entrez pour continuer.");
-            readString();
-            print(clear);
-            choixVerifCompte(compte);
-
+            stats(compte);
         }
 
         if(StringToInt(saisie) == 2){ //changer nom
-            ligne();
-            String[][] lesNoms = new String[rowCount(comptes)][columnCount(comptes)];
-            for(int i = 0; i < length(lesNoms,1);i++){
-                for(int j = 0; j < length(lesNoms,2);j++){
-                    lesNoms[i][j] = getCell(comptes,i,j);
-                }
-            }
-            box("Changer de nom :");
-            String nouveauNom;
-            do{
-                print("Nouveau nom  : ");
-                nouveauNom = readString();
-                if(length(nouveauNom) < 2){
-                    println("Nom trop court. Recommencez. (2 car min)");
-                }
-                else if(quelLigne(nouveauNom) != -1){
-                    println("Ce compte existe deja !");
-                }
-            }while(length(nouveauNom) < 2 || quelLigne(nouveauNom) != -1);
-            lesNoms[StringToInt(compte)][0] = nouveauNom;
-            saveCSV(lesNoms, "CSV/comptes.CSV");
-            comptes = loadCSV("CSV/comptes.CSV");
-            box("Nom changé avec succès !");
-            readString();
-            print(clear);
-            choixVerifCompte(compte);
+            changerNom(compte);
         }
 
         if(StringToInt(saisie) == 3){ //changer mdp
-            String nouveauMDP;
-            String ConfirmezMDP;
-            do{
-                ligne();
-                String[][] lesMDP = new String[rowCount(comptes)][columnCount(comptes)];
-                for(int i = 0; i < length(lesMDP,1);i++){
-                    for(int j = 0; j < length(lesMDP,2);j++){
-                        lesMDP[i][j] = getCell(comptes,i,j);
-                    }
-                }
-                box("Changer de mot de passe");
-                do{
-                    print("Nouveau mot de passe : ");
-                    nouveauMDP = readString();
-                    print("Confirmez le mot de passe : ");
-                    ConfirmezMDP = readString();
-                    
-                    if(length(nouveauMDP) < 2){
-                        println("MDP trop court. Recommencez. (3 car min)");
-                    }
-                }while(length(nouveauMDP) < 3);
-
-                if(equals(nouveauMDP, ConfirmezMDP)){
-                    lesMDP[StringToInt(compte)][1] = nouveauMDP;
-                    saveCSV(lesMDP, "CSV/comptes.CSV");
-                    comptes = loadCSV("CSV/comptes.CSV");
-                    box("Mot de passe changé avec succès !");
-                }else{
-                    box("Les mots de passe ne correspondent pas.");
-                }
-            }while(!(equals(nouveauMDP, ConfirmezMDP)));
-            readString();
-            print(clear);
-            choixVerifCompte(compte);
+            changerMDP(compte);
         }
 
         if(StringToInt(saisie) == 4){ //skin
-            String choisirSkin;
-            lesSkins(getCell(comptes,StringToInt(compte),6));
-            do{
-                ligne();
-                box("Changer de skin :");
-                print("Quel skin voulez-vous porter ? : ");
-                choisirSkin = readString();
-                if(equals(choisirSkin,"") || !(controleSaisieSkin(choisirSkin, getCell(comptes, StringToInt(compte),6)))){
-                    ligne();
-                    box("/!\\ Saisie incorrecte /!\\");
-                    choisirSkin = intToString(length(ensembleSkins) + 1);
-                }
-            }while(!(controleSaisieSkin(choisirSkin, getCell(comptes, StringToInt(compte),6))));
-
-            String[][] lesSkins = new String[rowCount(comptes)][columnCount(comptes)];
-            for(int i = 0; i < length(lesSkins,1);i++){
-                for(int j = 0; j < length(lesSkins,2);j++){
-                    lesSkins[i][j] = getCell(comptes,i,j);
-                }
-            }
-            lesSkins[StringToInt(compte)][7] = intToString(StringToInt(choisirSkin)-1);
-            saveCSV(lesSkins, "CSV/comptes.CSV");
-            comptes = loadCSV("CSV/comptes.CSV");
-            box("Skin changé avec succès !");
-            readString();
-            print(clear);
-            choixVerifCompte(compte);
+            changerSkin(compte);
         }
 
         if(StringToInt(saisie) == 5){ //retour
             listeCompte();
+            print(clear);
         }
 
         if(StringToInt(saisie) == 6){ //delete
-            ligne();
-            String[][] lesComptes = new String[rowCount(comptes)-1][columnCount(comptes)];
-            for(int i = 0; i < length(lesComptes,1);i++){
-                for(int j = 0; j < length(lesComptes,2);j++){
-                    lesComptes[i][j] = getCell(comptes,i,j);
-                }
-            }
-            box("Supprimer votre compte :");
-            print("Êtes vous sûr de vouloir supprimer votre compte ? (O/N) : ");
-
-            String confirmation = readString();
-            if(equals(confirmation,"O")){
-                for(int i = StringToInt(compte); i < length(lesComptes,1);i++){
-                    lesComptes[i][0] = getCell(comptes,i+1,0);
-                    lesComptes[i][1] = getCell(comptes,i+1,1);
-                    lesComptes[i][2] = getCell(comptes,i+1,2);
-                    lesComptes[i][3] = getCell(comptes,i+1,3);
-                    lesComptes[i][4] = getCell(comptes,i+1,4);
-                    lesComptes[i][5] = getCell(comptes,i+1,5);
-                }
-
-                saveCSV(lesComptes, "CSV/comptes.CSV");
-                comptes = loadCSV("CSV/comptes.CSV");
-                box("Compte supprimé avec succès.");
-            }else{
-                box("Suppression annulée.");
-            }
-            readString();
-            print(clear);
-            listeCompte();
+            deleteCompte(compte);
         }
+    }
+
+    void stats(String compte){
+        float victoires = StringToInt(getCell(comptes, StringToInt(compte), 4));
+        float defaites = StringToInt(getCell(comptes, StringToInt(compte), 5));
+        float wr = (victoires / (victoires + defaites)) * 100;
+        box("Vous avez gagné " + getCell(comptes, StringToInt(compte), 4) +
+            " fois et perdu " + getCell(comptes, StringToInt(compte), 5) + " fois. " +
+            "Pour un total de " + wr + "% de taux de victoires.");
+        box("De plus, vous êtes niveau " + 
+            getCell(comptes, StringToInt(compte), 2) + 
+            " avec " + 
+            getCell(comptes, StringToInt(compte), 3) + 
+            "XP.");
+        print("Entrez pour continuer.");
+        readString();
+        print(clear);
+        choixVerifCompte(compte);
+    }
+
+    void changerNom(String compte){
+        ligne();
+        String[][] lesNoms = new String[rowCount(comptes)][columnCount(comptes)];
+        for(int i = 0; i < length(lesNoms,1);i++){
+            for(int j = 0; j < length(lesNoms,2);j++){
+                lesNoms[i][j] = getCell(comptes,i,j);
+            }
+        }
+        box("Changer de nom :");
+        String nouveauNom;
+        do{
+            print("Nouveau nom  : ");
+            nouveauNom = readString();
+            if(length(nouveauNom) < 2){
+                println("Nom trop court. Recommencez. (2 car min)");
+            }
+            else if(quelLigne(nouveauNom) != -1){
+                println("Ce compte existe deja !");
+            }
+        }while(length(nouveauNom) < 2 || quelLigne(nouveauNom) != -1);
+        lesNoms[StringToInt(compte)][0] = nouveauNom;
+        saveCSV(lesNoms, "CSV/comptes.CSV");
+        comptes = loadCSV("CSV/comptes.CSV");
+        box("Nom changé avec succès !");
+        readString();
+        print(clear);
+        choixVerifCompte(compte);
+    }
+
+    void changerMDP(String compte){
+        String nouveauMDP;
+        String ConfirmezMDP;
+        do{
+            ligne();
+            String[][] lesMDP = new String[rowCount(comptes)][columnCount(comptes)];
+            for(int i = 0; i < length(lesMDP,1);i++){
+                for(int j = 0; j < length(lesMDP,2);j++){
+                    lesMDP[i][j] = getCell(comptes,i,j);
+                }
+            }
+            box("Changer de mot de passe");
+            do{
+                print("Nouveau mot de passe : ");
+                nouveauMDP = readString();
+                print("Confirmez le mot de passe : ");
+                ConfirmezMDP = readString();
+                
+                if(length(nouveauMDP) < 2){
+                    println("MDP trop court. Recommencez. (3 car min)");
+                }
+            }while(length(nouveauMDP) < 3);
+
+            if(equals(nouveauMDP, ConfirmezMDP)){
+                lesMDP[StringToInt(compte)][1] = nouveauMDP;
+                saveCSV(lesMDP, "CSV/comptes.CSV");
+                comptes = loadCSV("CSV/comptes.CSV");
+                box("Mot de passe changé avec succès !");
+            }else{
+                box("Les mots de passe ne correspondent pas.");
+            }
+        }while(!(equals(nouveauMDP, ConfirmezMDP)));
+        readString();
+        print(clear);
+        choixVerifCompte(compte);
+    }
+
+    void changerSkin(String compte){
+        String choisirSkin;
+        lesSkins(getCell(comptes,StringToInt(compte),6));
+        do{
+            ligne();
+            box("Changer de skin :");
+            print("Quel skin voulez-vous porter ? : ");
+            choisirSkin = readString();
+            if(equals(choisirSkin,"") || !(controleSaisieSkin(choisirSkin, getCell(comptes, StringToInt(compte),6)))){
+                ligne();
+                box("/!\\ Saisie incorrecte /!\\");
+                choisirSkin = intToString(length(ensembleSkins) + 1);
+            }
+        }while(!(controleSaisieSkin(choisirSkin, getCell(comptes, StringToInt(compte),6))));
+
+        String[][] lesSkins = new String[rowCount(comptes)][columnCount(comptes)];
+        for(int i = 0; i < length(lesSkins,1);i++){
+            for(int j = 0; j < length(lesSkins,2);j++){
+                lesSkins[i][j] = getCell(comptes,i,j);
+            }
+        }
+        lesSkins[StringToInt(compte)][7] = intToString(StringToInt(choisirSkin)-1);
+        saveCSV(lesSkins, "CSV/comptes.CSV");
+        comptes = loadCSV("CSV/comptes.CSV");
+        box("Skin changé avec succès !");
+        readString();
+        print(clear);
+        choixVerifCompte(compte);
+    }
+
+    void deleteCompte(String compte){
+        ligne();
+        String[][] lesComptes = new String[rowCount(comptes)-1][columnCount(comptes)];
+        for(int i = 0; i < length(lesComptes,1);i++){
+            for(int j = 0; j < length(lesComptes,2);j++){
+                lesComptes[i][j] = getCell(comptes,i,j);
+            }
+        }
+        box("Supprimer votre compte :");
+        print("Êtes vous sûr de vouloir supprimer votre compte ? (O/N) : ");
+
+        String confirmation = readString();
+        if(equals(confirmation,"O")){
+            for(int i = StringToInt(compte); i < length(lesComptes,1);i++){
+                lesComptes[i][0] = getCell(comptes,i+1,0);
+                lesComptes[i][1] = getCell(comptes,i+1,1);
+                lesComptes[i][2] = getCell(comptes,i+1,2);
+                lesComptes[i][3] = getCell(comptes,i+1,3);
+                lesComptes[i][4] = getCell(comptes,i+1,4);
+                lesComptes[i][5] = getCell(comptes,i+1,5);
+            }
+
+            saveCSV(lesComptes, "CSV/comptes.CSV");
+            comptes = loadCSV("CSV/comptes.CSV");
+            box("Compte supprimé avec succès.");
+        }else{
+            box("Suppression annulée.");
+        }
+        readString();
+        print(clear);
+        listeCompte();
     }
 
     boolean controleSaisieSkin(String saisie, String skinsPossedes){
@@ -1224,7 +1411,57 @@ int rejouer = 3;
         assertEquals(quelLigne("papaz"),-1);
         assertEquals(quelLigne("boneva"),-1);
         assertEquals(quelLigne("Robin"),4);
+    }
 
+    void test_testAleatoire(){
+        boolean test = false;
+        for(int i = 0; i < 100; i++){
+            print(testAleatoire());
+            if(testAleatoire() == 0){
+                test = true;
+            }
+        }
+        assertFalse(test);
+ 
+        test = false;
+        for(int i = 0; i < 100; i++){
+            if(testAleatoire() == 1){
+                test = true;
+            }
+        }
+        assertTrue(test);
+ 
+        test = false;
+        for(int i = 0; i < 100; i++){
+            if(testAleatoire() == 2){
+                test = true;
+            }
+        }
+        assertTrue(test);
+ 
+        test = false;
+        for(int i = 0; i < 100; i++){
+            if(testAleatoire() == 3){
+                test = true;
+            }
+        }
+        assertTrue(test);
+
+        test = false;
+        for(int i = 0; i < 100; i++){
+            if(testAleatoire() == 4){
+                test = true;
+            }
+        }
+        assertFalse(test);
+    }
+
+    void test_ConvertioEnMinute(){
+        assertEquals(convertionEnMinute(39),"39");
+        assertEquals(convertionEnMinute(59),"59");
+        assertEquals(convertionEnMinute(60),"1 minutes et 0");
+        assertEquals(convertionEnMinute(92),"1 minutes et 32");
+        assertEquals(convertionEnMinute(182),"3 minutes et 2");
     }
 //-------------jouer-----------------------------------------------------------------------------
 
