@@ -11,20 +11,34 @@ import extensions.File;
 import extensions.CSVFile;
 class RoadToTheKing extends Program{
 //variables globales
-final String clear = "\033[H\033[2J\033[3J";
-CSVFile comptes = loadCSV("CSV/comptes.CSV");
-final CSVFile dilemme = loadCSV("CSV/dilemmes.CSV",'_');
-final CSVFile evenements = loadCSV("CSV/evenements.CSV",'_');
-final CSVFile items = loadCSV("CSV/items.CSV",'_');
-final CSVFile questions = loadCSV("CSV/questions.CSV",'_');
-final CSVFile zones = loadCSV("CSV/zones.CSV",'_');
-final String ensembleSkins = "◎⩇⁝⬔🗝⧖⚙𝓩𝓐⚖ڽ﷼⚔✟✠☠⚡︎⌘⏀⛩☯✧❂*☭";
-Joueur[] ensembleJoueur; //trouver joueur actu et load les données dans les bonnes cases
-ContenuCases[][] contenuChaqueCase; 
-Partie partie;
-int joueurActu = 0; //joueur actuel
-int rejouer = 3;
 
+    //utilitaires
+    final String clear = "\033[H\033[2J\033[3J";
+    final String ensembleSkins = "◎⩇⁝⬔🗝⧖⚙𝓩𝓐⚖ڽ﷼⚔✟✠☠⚡︎⌘⏀⛩☯✧❂*☭";
+
+    //csv
+    CSVFile comptes = loadCSV("CSV/comptes.CSV");
+    final CSVFile dilemme = loadCSV("CSV/dilemmes.CSV",'_');
+    final CSVFile evenements = loadCSV("CSV/evenements.CSV",'_');
+    final CSVFile items = loadCSV("CSV/items.CSV",'_');
+    final CSVFile questions = loadCSV("CSV/questions.CSV",'_');
+    final CSVFile zones = loadCSV("CSV/zones.CSV",'_');
+
+    //structure du jeu
+    Joueur[] ensembleJoueur; //trouver joueur actu et load les données dans les bonnes cases
+    ContenuCases[][] contenuChaqueCase; 
+    Partie partie;
+    int joueurActu = 0; //joueur actuel
+    int rejouer = 3;
+
+    //cases
+    final String caseVide = "   ";
+    final String caseMonolith = "🗿 ";
+    String caseJoueur; //impossible a créer au début (NullPointerException error)
+    String caseJoueur2;
+    String caseJoueur3;
+    String caseJoueur4;
+                                                    
 //-------------programme-----------------------------------------------------------------------------
     void algorithm(){
         boolean quitter = false;
@@ -33,6 +47,7 @@ int rejouer = 3;
             int premierChoix = premierChoix();
             if(rejouer == 4){
                 rejouer = 3;
+                print(clear);
             }
 
             //LE JEU
@@ -111,13 +126,13 @@ int rejouer = 3;
         do{
             print("Choisissez ce que vous voulez faire : ");
             saisie = readString();
-            if(saisie == "" || !(controleSaisieInt(saisie,"4")) || StringToInt(saisie) <= 0){
+            if(!(controleSaisieInt(saisie,"4"))){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 ligne();
                 saisie = "9";  
             }
-        }while(!(controleSaisieInt(saisie, "4")) || StringToInt(saisie) <= 0);
+        }while(!(controleSaisieInt(saisie, "4")));
 
         return StringToInt(saisie);
     }
@@ -131,8 +146,17 @@ int rejouer = 3;
 //-------------générales-----------------------------------------------------------------------------
     boolean controleSaisieInt(String saisie, String max){
         boolean result = true;
-        if(StringToInt(saisie) > StringToInt(max) || StringToInt(saisie) == 0){
+        if(equals(saisie,"")){
             result = false;
+        }
+        else if(StringToInt(saisie) > StringToInt(max) || StringToInt(saisie) < 1 || equals(saisie,"")){
+            result = false;
+        }else{
+            for(int i = 0; i < length(saisie); i++){
+                if(charAt(saisie,i) > '9' || charAt(saisie,i) < '0'){
+                    result = false;
+                }
+            }
         }
         return result;
     }
@@ -286,7 +310,7 @@ int rejouer = 3;
         return p;
     }
 
-    ContenuCases newContenuCases(String event, String question1, String question2, String question3, String apparitionItem, String descItem, int ligneItem, int reponse, int temps){
+    ContenuCases newContenuCases(String event, String question1, String question2, String question3, String apparitionItem, String descItem, int ligneItem, int reponse1, int reponse2, int reponse3, int temps){
         ContenuCases c = new ContenuCases();
         c.evenement = event;
         c.question1 = question1;
@@ -295,7 +319,9 @@ int rejouer = 3;
         c.apparitionItem = apparitionItem;
         c.descItem = descItem;
         c.ligneItem = ligneItem;
-        c.reponse = reponse;
+        c.reponse1 = reponse1;
+        c.reponse2 = reponse2;
+        c.reponse3 = reponse3;
         c.temps = temps;
         return c;
     }
@@ -343,57 +369,6 @@ int rejouer = 3;
         ensembleJoueur = ensembleJoueurCopie;
     }
 
-
-    String connection(){
-        String saisie; //chiffre du compte... (voir derniere ligne fonction)
-        do{
-
-            ligne(); //presentation comtpes
-            println("Les différents comptes :");
-            for(int i = 1; i < rowCount(comptes);i++){
-                if(pasDejaPris(getCell(comptes,i,0))){
-                    println(i + " : " + getCell(comptes, i, 0));
-                }
-            }
-            print("Votre choix : "); //choix (chiffre)
-            saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie, intToString(rowCount(comptes)-1))) || StringToInt(saisie) <= 0){
-                ligne();
-                box("/!\\ Saisie incorrecte /!\\");
-                saisie = "9";
-            }
-            else if(!(pasDejaPris(getCell(comptes,StringToInt(saisie),0)))){
-                ligne();
-                box("/!\\ Compte déja utilisé /!\\");
-            }
-        }while(!(controleSaisieInt(saisie, intToString(rowCount(comptes)-1)) || StringToInt(saisie) <= 0) ||
-                !(pasDejaPris(getCell(comptes,StringToInt(saisie),0)))); //on est sur que l'entrée est bonne
-
-
-        if(!(equals(getCell(comptes,StringToInt(saisie),0),"Invité"))){ //Compte classique
-            if(!(connectionMDP(StringToInt(saisie)))){
-                ligne();
-                box("/!\\ MDP incorrect /!\\");
-                saisie = connection();
-            }else{
-                saisie = getCell(comptes,StringToInt(saisie),0);
-            }
-        }else{ //Si c'est un invité
-            do{
-                print("Choisissez votre pseudo : ");
-                saisie = readString();
-                if(equals(saisie, "")){
-                    box("/!\\ Saisie incorrecte /!\\");
-                }
-                else if(quelLigne(saisie) != -1){
-                    box("Un compte existe deja à ce nom ! Veuillez changer.");
-                }
-            }while(equals(saisie,"") ||
-                    quelLigne(saisie) != -1);
-        }
-        return saisie; //...est convertie en nom du compte
-    }
-
     void phaseDeConnection(){
         for(int i = 1; i<=length(ensembleJoueur);i++){
             ligne();
@@ -422,6 +397,56 @@ int rejouer = 3;
                 box("Joueur " + i + " connecté à " + ensembleJoueur[i-1].nom +  " avec succès !");
             }
         }
+    }
+
+    String connection(){
+        String saisie; //chiffre du compte... (voir derniere ligne fonction)
+        do{
+
+            ligne(); //presentation comtpes
+            println("Les différents comptes :");
+            for(int i = 1; i < rowCount(comptes);i++){
+                if(pasDejaPris(getCell(comptes,i,0))){
+                    println(i + " : " + getCell(comptes, i, 0));
+                }
+            }
+            print("Votre choix : "); //choix (chiffre)
+            saisie = readString();
+            if(!(controleSaisieInt(saisie, intToString(rowCount(comptes)-1)))){
+                ligne();
+                box("/!\\ Saisie incorrecte /!\\");
+                saisie = "9";
+            }
+            else if(!(pasDejaPris(getCell(comptes,StringToInt(saisie),0)))){
+                ligne();
+                box("/!\\ Compte déja utilisé /!\\");
+            }
+        }while(!(controleSaisieInt(saisie, intToString(rowCount(comptes)-1)))||
+                !(pasDejaPris(getCell(comptes,StringToInt(saisie),0)))); //on est sur que l'entrée est bonne
+
+
+        if(!(equals(getCell(comptes,StringToInt(saisie),0),"Invité"))){ //Compte classique
+            if(!(connectionMDP(StringToInt(saisie)))){
+                ligne();
+                box("/!\\ MDP incorrect /!\\");
+                saisie = connection();
+            }else{
+                saisie = getCell(comptes,StringToInt(saisie),0);
+            }
+        }else{ //Si c'est un invité
+            do{
+                print("Choisissez votre pseudo : ");
+                saisie = readString();
+                if(equals(saisie, "")){
+                    box("/!\\ Saisie incorrecte /!\\");
+                }
+                else if(quelLigne(saisie) != -1){
+                    box("Un compte existe deja à ce nom ! Veuillez changer.");
+                }
+            }while(equals(saisie,"") ||
+                    quelLigne(saisie) != -1);
+        }
+        return saisie; //...est convertie en nom du compte
     }
 
     int quelLigne(String nom){
@@ -458,7 +483,7 @@ int rejouer = 3;
 
     Joueur[] remplirTab(Joueur[] ensembleARemplir){ //remplir tab ensemble joueur pour pv le lire
         for(int i = 0; i < length(ensembleARemplir);i++){
-            ensembleARemplir[i] = newJoueur(i+1,' ',"   ",0,0,0,0);
+            ensembleARemplir[i] = newJoueur(i+1,' ',caseVide,0,0,0,0);
         }
         return ensembleARemplir;
     }
@@ -474,12 +499,12 @@ int rejouer = 3;
                     "- 4 joueuse(r)s");
             print("Votre choix : ");
             saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie,"4")) || StringToInt(saisie) <= 0){
+            if(!(controleSaisieInt(saisie,"4"))){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
             }
-        }while(!(controleSaisieInt(saisie, "4")) || StringToInt(saisie) <= 0);
+        }while(!(controleSaisieInt(saisie, "4")));
         return StringToInt(saisie);
     }
 
@@ -497,12 +522,12 @@ int rejouer = 3;
                     "(le temps s'adapte en fonction de la difficulté de la question)");
             print("Votre choix : ");
             saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie,"6")) || StringToInt(saisie) <= 0){
+            if(!(controleSaisieInt(saisie,"6"))){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
             }
-        }while(!(controleSaisieInt(saisie, "6")) || StringToInt(saisie) <= 0);
+        }while(!(controleSaisieInt(saisie, "6")));
         box("Vous avez mis le temps au mode " + saisie + ".");
         return StringToInt(saisie);
     }
@@ -514,14 +539,15 @@ int rejouer = 3;
             box("Choisissez un nombre de points pour gagner (entre 2 et 10) :");
             print("Votre choix : ");
             saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie,"10") || StringToInt(saisie) < 2)){
+            if(equals(saisie,"")){
+                saisie="11";
+            }
+            if(!(controleSaisieInt(saisie,"10") || StringToInt(saisie) < 2)){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
-                saisie = "11";
             }
         }while(!(controleSaisieInt(saisie, "10")) ||
-                StringToInt(saisie) < 2 ||
-                equals(saisie,""));
+                StringToInt(saisie) < 2);
         box("Il faudra avoir " + saisie + " points pour gagner.");
         return StringToInt(saisie);
     }
@@ -536,10 +562,10 @@ int rejouer = 3;
         return false;
     }
 
-    boolean decrypterCasesPossibles(String casesPossibles, String saisie){
+    boolean decrypterCasesPossibles(String[] casesPossibles, String saisie){
         boolean result = false;
         for(int i = 0; i < length(casesPossibles); i++){
-            if(charAt(casesPossibles,i) == charAt(saisie, 0)){
+            if(equals(casesPossibles[i],saisie)){
                 result = true;
             }
         }
@@ -561,24 +587,27 @@ int rejouer = 3;
             afficherTab(contenuChaqueCase);
 
             int uneCase = tourDeplacement(); //partie deplacement du tour
-            int chance = (int)(random()*3);
-
-            if(chance == 1){ //une chance sur 3 d'avoir l'item
-                ensembleJoueur[joueurActu].tools = tourItem(ensembleJoueur[joueurActu].tools, uneCase, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].ligneItem);
-                String saisie;
-                do{
-                    print("Voir (T) ou utiliser (U) l'item (rien ou autre pour ignorer) : ");
-                    saisie = readString();
-                    if(commandeExterne(saisie)){
-                        appliquerCommandeExterne(saisie);
-                    }
-                }while(commandeExterne(saisie));
-            }
-            println("\n\n");
             if(uneCase != -1){
-                tourQuestion(uneCase); //partie gameplay du tour
+                int chance = (int)(random()*3);
+                if(chance == 1){ //une chance sur 3 d'avoir l'item
+                    ensembleJoueur[joueurActu].tools = tourItem(ensembleJoueur[joueurActu].tools, uneCase,contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].ligneItem);
+                    String saisie;
+                    do{
+                        print("Voir (T) ou utiliser (U) l'item (rien ou autre pour ignorer) : ");
+                        saisie = readString();
+                        if(commandeExterne(saisie)){
+                            appliquerCommandeExterne(saisie);
+                        }
+                    }while(commandeExterne(saisie));
+                }
+                println("\n");
+                ligne();
+                println("");
+                if(uneCase != -1){
+                    tourQuestion(uneCase); //partie gameplay du tour
+                }
+                readString();
             }
-            readString();
 
             joueurActu = (joueurActu + 1)%length(ensembleJoueur); //change joueur
         }
@@ -593,7 +622,7 @@ int rejouer = 3;
         int uneCase = choixCase();
         if(uneCase != -1){
             println("\nEvenement :");
-            box(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].evenement);
+            box(contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].evenement);
         }
         return uneCase;
     }
@@ -601,9 +630,8 @@ int rejouer = 3;
     String tourItem(String toolsListe, int uneCase, int ligneItem){
         println("\nUn nouvel item ! :");
         int newItem = charAt(toolsListe, ligneItem)-('0');
-        println("New item : " + newItem);
         newItem ++;
-        box(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].apparitionItem);
+        box(contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].apparitionItem);
         if(charAt(toolsListe,ligneItem) != 9){ //sinon ca bug
             toolsListe = substring(toolsListe, 0, ligneItem) + 
                         intToChar(newItem) +
@@ -617,11 +645,24 @@ int rejouer = 3;
         readString();
         //debut timer
         long debut = getTime();
-        String question;
+        String questionReponse;
         if(ensembleJoueur[joueurActu].vista){
-            question = contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question1;
+            questionReponse = contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].question1 + "£" + contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].reponse1;
         }else{
-            question = questionAleatoire(uneCase);
+            questionReponse = questionAleatoire(uneCase);
+        }
+        String question = "";
+        String reponse = "";
+        boolean isQuestion = true;
+        for(int i = 0; i< length(questionReponse); i++){
+            if(charAt(questionReponse,i) != '£' && isQuestion){
+                question = question + charAt(questionReponse,i);
+            }
+            else if(charAt(questionReponse,i) != '£' && !isQuestion){
+                reponse = reponse + charAt(questionReponse,i);  
+            }else{
+                isQuestion = !isQuestion;
+            }
         }
         println("Question :");
         box("Question pour le messager " + 
@@ -630,35 +671,38 @@ int rejouer = 3;
             question);
         if(partie.coeffTemps != 6){
             box("(Vous avez " + 
-                convertionEnMinute(calculTempsQuestions(partie.coeffTemps, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps)) + 
+                convertionEnMinute(calculTempsQuestions(partie.coeffTemps,contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].temps)) + 
                 " secondes.)");
         }
-        String reponse;
+        String votreReponse;
         do{
             print("Votre réponse : ");
-            reponse = readString();
-            if(equals(reponse,"")){
+            votreReponse = readString();
+            if(equals(votreReponse,"")){
                 box("/!\\ Saisie incorrecte /!\\");
             }
-            else if(verifQuestion(contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].reponse,reponse)){
+            else if(verifQuestion(StringToInt(votreReponse),reponse)){
                 long fin = getTime();
                 float tempsPrisMS = (fin - debut);
                 float tempsPris = tempsPrisMS/1000;
-                if(partie.coeffTemps != 6 && calculTempsQuestions(partie.coeffTemps, contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].temps) > tempsPris){
+                if(partie.coeffTemps != 6 && calculTempsQuestions(partie.coeffTemps, contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].temps) > tempsPris){
                     if(ensembleJoueur[joueurActu].score < 9){
                         println("Bien joué messager " + ensembleJoueur[joueurActu].nom + ", tu peux continuer ton chemin !");
                     }
-                    ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + 1;
+                    ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + ensembleJoueur[joueurActu].vitesse;
                     updateTab(uneCase);
+                    
                     box("Vous avez mis " + tempsPris + "s à répondre.");
                 }else if(partie.coeffTemps != 6){
                     box("Vous avez mis trop de temps à répondre messager. Soit " + tempsPris + " secondes.");
                 }else if(partie.coeffTemps == 6){
-                    ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + 1;
+                    ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + ensembleJoueur[joueurActu].vitesse;
                     updateTab(uneCase);
                 }
             }
-        }while(equals(reponse,""));
+            ensembleJoueur[joueurActu].vitesse = 1;
+            clearMoai();
+        }while(equals(votreReponse,""));
         long fin = getTime();
         //fin timer
     }
@@ -666,13 +710,13 @@ int rejouer = 3;
     String questionAleatoire(int uneCase){
         int choix = (int)(random()*3);
         if(choix == 0){
-            return contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question1;
+            return contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].question1 + "£" + contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].reponse1;
         }
         if(choix == 1){
-            return contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question2;
+            return contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].question2 + "£" + contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].reponse2;
         }
         if(choix == 2){
-            return contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].question3;
+            return contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].question3 + "£" + contenuChaqueCase[uneCase%5][(ensembleJoueur[joueurActu].score)+(uneCase/5)].reponse3;
         }
         println("Bug : " + choix);
         return "bug";
@@ -692,37 +736,97 @@ int rejouer = 3;
 
     int choixCase(){
         String saisie;
-        String casesPossibles = "";
+        String[] casesPossibles = new String[]{"bloqué"};
+        String[] casesPossibles2 = new String[]{"bloqué"};
+        String[] casesPossibles3 = new String[]{"bloqué"}; //veut dire bug a vitesse = 4
+        String[] toutesCasesPossibles;
         do{
-            String texte = "Choisissez votre prochaine case (";
-            for(int i = 0; i < length(contenuChaqueCase,1);i++){
-                if(equals(contenuChaqueCase[i][ensembleJoueur[joueurActu].score+1].remplirCase,"   ")){
-                    if(i == ensembleJoueur[joueurActu].posX ||
-                        i == ensembleJoueur[joueurActu].posX-1 ||
-                        i == ensembleJoueur[joueurActu].posX+1){
-                        texte = texte + (i+1) + ", ";
-                        casesPossibles = casesPossibles + (i+1);
+            String texte = "Choisissez votre prochaine case : (";
+            for(int i = 0; i < ensembleJoueur[joueurActu].vitesse; i++){ //génere sa vitesse
+                if(i == 0){
+                    casesPossibles = casesPossibles(1, ensembleJoueur[joueurActu].score+1);
+                    for(int j = 0; j < length(casesPossibles); j++){
+                        if(length(casesPossibles) - j == 1){
+                            texte = texte + casesPossibles[j] + ")";
+                        }
+                        else if(length(casesPossibles) - j == 2){
+                            texte = texte + casesPossibles[j] + " ou ";
+                        }else{
+                            texte = texte + (casesPossibles[j]) + ", ";
+                        }
+                    }
+                }
+                if(i == 1){
+                    casesPossibles2 = casesPossibles(6, ensembleJoueur[joueurActu].score+1);
+                    if(i == 1){
+                        texte = texte + (" Ou encore devant : (");
+                    }
+                    for(int j = 0; j < length(casesPossibles2); j++){
+                        if(length(casesPossibles2) - j == 1){
+                            texte = texte + casesPossibles2[j] + ")";
+                        }
+                        else if(length(casesPossibles2) - j == 2){
+                            texte = texte + casesPossibles2[j] + " ou ";
+                        }else{
+                            texte = texte + (casesPossibles2[j]) + ", ";
+                        }
+                    }
+                }
+                if(i == 2){
+                    casesPossibles3 = casesPossibles(11, ensembleJoueur[joueurActu].score+1);
+                    if(i > 1){
+                        texte = texte +(" Ou encore plus loin ! (");
+                    }
+                    for(int j = 0; j < length(casesPossibles3); j++){
+                        if(length(casesPossibles3) - j == 1){
+                            texte = texte + casesPossibles3[j] + ")";
+                        }
+                        else if(length(casesPossibles3) - j == 2){
+                            texte = texte + casesPossibles3[j] + " ou ";
+                        }else{
+                            texte = texte + (casesPossibles3[j]) + ", ";
+                        }
                     }
                 }
             }
-            texte = texte + ("T, S, U) ou \"I\" si vous êtes perdus : ");
-            if(length(casesPossibles) > 0){
-                box(texte);
-            }else{
+            toutesCasesPossibles = new String[length(casesPossibles) + length(casesPossibles2) + length(casesPossibles3)];
+            int reset = 0;
+            
+            for(int j = 0; j < length(casesPossibles); j++){
+                toutesCasesPossibles[reset] = casesPossibles[j];
+                reset ++;
+            }
+            for(int j = 0; j < length(casesPossibles2); j++){
+                toutesCasesPossibles[reset] = casesPossibles2[j];
+                reset ++;
+            }
+            for(int j = 0; j < length(casesPossibles3); j++){
+                toutesCasesPossibles[reset] = casesPossibles3[j];  
+                reset++;
+            }
+            reset = 0;
+
+            if(equals(casesPossibles[0],"bloqué") && equals(casesPossibles2[0],"bloqué") && equals(casesPossibles3[0],"bloqué")){
                 box("Vous n'avez nulle part ou aller messager... Prenez un peu de repos.");
+                readString();
                 return -1;
+            }else{
+                box(texte);
+                println("- \"T\" pour voir vos items");
+                println("- \"S\" pour voir vos stats");
+                println("- \"U\" pour utiliser vos items");
             }
             saisie = readString();
             if(commandeExterne(saisie)){
                 appliquerCommandeExterne(saisie);
                 saisie = "9";
             }
-            else if(length(saisie) != 1 || !(decrypterCasesPossibles(casesPossibles, saisie))){
+            else if(length(saisie) != 1 || !(decrypterCasesPossibles(toutesCasesPossibles, saisie))){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
             }
-        }while(!(decrypterCasesPossibles(casesPossibles, saisie)));
+        }while(!(decrypterCasesPossibles(toutesCasesPossibles, saisie)));
         return StringToInt(saisie)-1;
     }
 
@@ -737,12 +841,12 @@ int rejouer = 3;
                     "5 - Quitter le programme\n" +
                     "Votre choix : ");
                     saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie,"5")) || StringToInt(saisie) <= 0){
+            if(!(controleSaisieInt(saisie,"5"))){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
             }
-        }while(!(controleSaisieInt(saisie, "5")) || StringToInt(saisie) <= 0);
+        }while(!(controleSaisieInt(saisie, "5")));
         rejouer = StringToInt(saisie);
     }
 
@@ -766,10 +870,10 @@ int rejouer = 3;
             afficherStats(ensembleJoueur[joueurActu]);
         }
         else if(equals(saisie,"U")){
-            //utiliserTool(ensembleJoueur[joueurActu].tools);
+            utiliserItems(ensembleJoueur[joueurActu].tools);
         }
         else if(equals(saisie,"I")){
-            //afficherRègles();
+            //afficherRègles(); //
         }
     }
 
@@ -814,7 +918,7 @@ int rejouer = 3;
         print("Vous pouvez avancer de " + joueur.vitesse + " case par tour");
         if(!(joueur.secondeVie)){
             println(",");
-            println("mais vous n'avez qu'une seule chance par question !");
+            println("et vous n'avez qu'une seule chance par question...");
         }else{
             println("\net vous avez en plus de ca une seconde chance lors de votre prochaine erreur !");
         }
@@ -824,16 +928,323 @@ int rejouer = 3;
         }else{
             println("n'êtes pas confus.");
         }
-        int compteur = 0;
-        for(int i = 0; i < length(joueur.tools); i++){
-            compteur = compteur + charToInt(charAt(joueur.tools,i));
-        }
-        println("De plus, vous possédez " + compteur + " items.");
+        
+        println("De plus, vous possédez " + nombreItems() + " items.");
     }
 
+    void utiliserItems(String itemsListe){
+        if(nombreItems() == 0){
+            println("Vous n'avez pas encore d'items...");
+        }else{
+            box("Vous pouvez utiliser :");
+            utiliserItemsRecueil(itemsListe);
+        }
+    }
+
+    int nombreItems(){
+        int compteur = 0;
+        for(int i = 0; i < length(ensembleJoueur[joueurActu].tools); i++){
+            compteur = compteur + charToInt(charAt(ensembleJoueur[joueurActu].tools,i));
+        }
+        return compteur;
+    }
+
+    void utiliserItemsRecueil(String itemsListe){
+        String saisie;
+        do{
+            for(int i = 0; i < length(itemsListe);i++){
+                if(charAt(itemsListe,i) != '0'){
+                    println((i) + " : " + getCell(items,i,0) + " (" + charAt(itemsListe,i) + " fois)");
+                }
+            }
+            print("Que voulez vous utiliser ? (Q pour quitter) : ");
+            saisie = readString();
+            println("");
+            if(equals(saisie,"Q")){
+                return;
+            }
+            else if(!(controleSaisieInt(saisie,intToString(length(itemsListe))))){
+                box("/!\\ Saisie incorrecte /!\\");
+            }
+        }while(!(controleSaisieInt(saisie,intToString(length(itemsListe)))));
 
 
+        //LANCER LES EFFETS DES ITEMS
+        if(StringToInt(saisie) == 1 && charAt(itemsListe,1) != '0'){
+            bocalALuciole();
+        }
+        else if(StringToInt(saisie) == 2 && charAt(itemsListe,2) != '0'){
+            monolitheDePoche();
+            int newItem = charAt(itemsListe, 2)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 2) + 
+                        intToChar(newItem) +
+                        substring(itemsListe, 3, length(itemsListe));
+        }
+        else if(StringToInt(saisie) == 3 && charAt(itemsListe,3) != '0'){
+            runeDalterationRealite();
+            int newItem = charAt(itemsListe, 3)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools  = substring(itemsListe, 0, 3) + 
+                        intToChar(newItem) +
+                        substring(itemsListe, 4, length(itemsListe));
+        }
+        else if(StringToInt(saisie) == 4 && charAt(itemsListe,4) != '0'){
+            ailesDechuesDeLOrin();
+            int newItem = charAt(itemsListe, 4)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 4) + 
+                        intToChar(newItem) +
+                        substring(itemsListe, 5, length(itemsListe));
+        }
+        else if(StringToInt(saisie) == 5 && charAt(itemsListe,5) != '0'){
+            oeilOmniscientDeMiquella();
+            int newItem = charAt(itemsListe, 5)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 5) + 
+                        intToChar(newItem) +
+                        substring(itemsListe, 6, length(itemsListe));
+        }
+        else if(StringToInt(saisie) == 6 && charAt(itemsListe, 6) != '0'){
+            epeeMaudite();
+            int newItem = charAt(itemsListe, 6)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 6) + 
+                        intToChar(newItem) +
+                        substring(itemsListe, 7, length(itemsListe));
+        }
+        else if(StringToInt(saisie) == 7 && charAt(itemsListe,7) != '0'){
+            aiguilleDeGivre();
+            int newItem = charAt(itemsListe, 7)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 7) + 
+                        intToChar(newItem) +
+                        substring(itemsListe, 8, length(itemsListe));
+        }
+        else if(StringToInt(saisie) == 8 && charAt(itemsListe, 8) != '0'){
+            benedictionDeMiquella();
+            int newItem = charAt(itemsListe, 8)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 8) + 
+                        intToChar(newItem) +
+                        substring(itemsListe, 9, length(itemsListe));
+        }
+        else if(StringToInt(saisie) == 9 && charAt(itemsListe,9) != '0'){
+            mineraiDeFer();
+            int newItem = charAt(itemsListe, 9)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 9) + 
+                        intToChar(newItem) +
+                        substring(itemsListe, 10, length(itemsListe));
+                        println(substring(itemsListe, 0, 0) + "/" + intToChar(newItem) + "/" + substring(itemsListe, 1, length(itemsListe)));
+        }
+        else if(StringToInt(saisie) == 10 && charAt(itemsListe,10) != '0'){
+            runeDalterationIntimidation();
+            int newItem = charAt(itemsListe, 10)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 10) + 
+                        intToChar(newItem) +
+                        substring(itemsListe, 11, length(itemsListe));
+        }
+        else if(StringToInt(saisie) == 11 && charAt(itemsListe,11) != '0'){
+            runeDalterationTemps();
+            int newItem = charAt(itemsListe, 11)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 11) + 
+                        intToChar(newItem) +
+                        substring(itemsListe, 12, length(itemsListe));
+        }
+        else if(StringToInt(saisie) == 12 && charAt(itemsListe,12) != '0'){
+            viandeDeKrah();
+            int newItem = charAt(itemsListe, 12)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 12) + 
+                        intToChar(newItem) +
+                        substring(itemsListe, 13, length(itemsListe));
+        }else{
+            ligne();
+            println("Vous n'avez pas cet objet.");
+        }
 
+    }
+//--------------les pouvoirs-------------------------------------------------------------------------------------------
+    void bocalALuciole(){ //1
+        if(!(ensembleJoueur[joueurActu].protégé) && !(ensembleJoueur[joueurActu].protégéMiquella) && !(ensembleJoueur[joueurActu].protégéMineraisDeFer)){
+            ensembleJoueur[joueurActu].protégé = true;
+            int newItem = charAt(ensembleJoueur[joueurActu].tools, 1)-('0');
+            newItem --; 
+            ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 1) + 
+                        intToChar(newItem) +
+                        substring(ensembleJoueur[joueurActu].tools, 2, length(ensembleJoueur[joueurActu].tools));
+            box("Vous êtes désormais protégé du danger pour votre prochain tour !");
+        }else{
+            box("Vous êtes actuellement déja protégé du danger !");
+        }
+    }
+    
+    void monolitheDePoche(){ //2
+        box("Voici toutes les cases ou vous pouvez placer le monolithe :");
+        String[] ensembleCasesDerriere = new String[]{"16"};
+        if(ensembleJoueur[joueurActu].score > 0){
+            println("Sur les cases derriere vous : ");
+            ensembleCasesDerriere = casesPossibles(1, ensembleJoueur[joueurActu].score-1);
+            for(int i = 0; i < length(ensembleCasesDerriere); i++){
+                print(ensembleCasesDerriere[i] + ", ");
+            }
+            println();
+        }
+        println("Sur les cases sur votre ligne : ");
+        String[] ensembleCasesMaLigne = casesPossibles(6, ensembleJoueur[joueurActu].score);
+        for(int i = 0; i < length(ensembleCasesMaLigne); i++){
+                print(ensembleCasesMaLigne[i] + ", ");
+            }
+        println();
+        
+        println("Sur les cases devant vous : ");
+        String[] ensembleCasesDevant = casesPossibles(11, ensembleJoueur[joueurActu].score+1);
+        for(int i = 0; i < length(ensembleCasesDevant); i++){
+                print(ensembleCasesDevant[i] + ", ");
+            }
+        println();
+
+        String saisie;
+        do{
+            print("Choisissez une case parmi celles-ci (ou Q pour quitter) : ");
+            saisie = readString();
+            if(equals(saisie,"Q")){
+                return;
+            }
+            else if(!(controleSaisieInt(saisie,"15")) ||
+                    !(decrypterCasesPossibles(ensembleCasesDerriere, saisie)) &&
+                    !(decrypterCasesPossibles(ensembleCasesMaLigne, saisie)) &&
+                    !(decrypterCasesPossibles(ensembleCasesDevant, saisie))){
+                ligne();
+                box("/!\\ Saisie incorrecte /!\\");
+                saisie = "9";
+            }
+        }while(!(controleSaisieInt(saisie,"15")) ||
+                !(decrypterCasesPossibles(ensembleCasesDerriere, saisie)) &&
+                !(decrypterCasesPossibles(ensembleCasesMaLigne, saisie)) &&
+                !(decrypterCasesPossibles(ensembleCasesDevant, saisie)));
+        
+        contenuChaqueCase[(StringToInt(saisie)%5)-1][(ensembleJoueur[joueurActu].score-1)+(StringToInt(saisie)-1)/5].remplirCase = caseMonolith;
+        contenuChaqueCase[(StringToInt(saisie)%5)-1][(ensembleJoueur[joueurActu].score-1)+(StringToInt(saisie)-1)/5].possedeMoai = true;
+        contenuChaqueCase[(StringToInt(saisie)%5)-1][(ensembleJoueur[joueurActu].score-1)+(StringToInt(saisie)-1)/5].coupableMoai = ensembleJoueur[joueurActu].jno;
+        box("Votre monolithe a été placé avec succès !!");
+        readString();
+        print(clear);
+        afficherTab(contenuChaqueCase);
+    }
+
+    String[] casesPossibles(int incrémentation, int colonne){
+        String[] ensembleCases;
+        int cpt = 0;
+        for(int i = 0; i < 5; i++){
+            if(equals(contenuChaqueCase[i][colonne].remplirCase,caseVide)){
+                if(i == ensembleJoueur[joueurActu].posX ||
+                    i == ensembleJoueur[joueurActu].posX-1 ||
+                    i == ensembleJoueur[joueurActu].posX+1){
+                    cpt++;
+                }
+            }
+        }
+        if(cpt != 0){
+            ensembleCases = new String[cpt];
+            cpt = 0;
+            for(int i = 0; i < 5; i++){
+                if(equals(contenuChaqueCase[i][colonne].remplirCase,caseVide)){
+                    if(i == ensembleJoueur[joueurActu].posX ||
+                        i == ensembleJoueur[joueurActu].posX-1 ||
+                        i == ensembleJoueur[joueurActu].posX+1){
+                        ensembleCases[cpt] = "" + (i+incrémentation);
+                        cpt++;
+                    }
+                }
+            }
+        }else{
+            ensembleCases = new String[]{"bloqué"};
+        }
+        return ensembleCases;
+    }
+
+    void runeDalterationRealite(){ //3
+
+    }
+
+    void ailesDechuesDeLOrin(){ //4
+        if(ensembleJoueur[joueurActu].vitesse + ensembleJoueur[joueurActu].score == partie.scoreDeVictoire){
+            box("M'enfin ! Si proche de l'arrivée... faite le a la loyale, pardi !");
+        }else if(ensembleJoueur[joueurActu].vitesse + ensembleJoueur[joueurActu].score > partie.scoreDeVictoire){
+            println("Premier degres vous n'etes pas sensé etre la. Si vous voyez ce message, le programme va crash et vous avez trouvé un bug. GG lol");
+        }else{
+            ensembleJoueur[joueurActu].vitesse += 1;
+            box("D'un pelage si doux et pourtant si intimidant, vous parvenez à enfiler ces ailes d'Ørin, étonnement plutot ergonomique. Ce don venant d'un être à la pointe de l'évolution, de ce rapace concidéré comme un divinité par sa perfection,  vous permettera d'elever votre a " + ensembleJoueur[joueurActu].vitesse + " jusqu'au prochain tour.");
+        }
+
+    }
+
+    void oeilOmniscientDeMiquella(){ //5
+        ensembleJoueur[joueurActu].vista = true;
+        String saisie;
+        String[] casesPossibles = casesPossibles(1,ensembleJoueur[joueurActu].score+1);
+        do{
+            print("De quelle case voulez-vous voir l'avenir ? : ");
+            saisie = readString();
+            if(!(decrypterCasesPossibles(casesPossibles, saisie))){
+                box("/!\\ saisie incorrecte /!\\");
+            }
+        }while(!(decrypterCasesPossibles(casesPossibles, saisie)));
+        println("La question sur cette case : " + contenuChaqueCase[StringToInt(saisie)][ensembleJoueur[joueurActu].score+1].question1);
+    }
+
+    void epeeMaudite(){
+
+    }
+
+    void aiguilleDeGivre(){
+
+    }
+
+    void benedictionDeMiquella(){ //8
+        if(!(ensembleJoueur[joueurActu].protégé) && !(ensembleJoueur[joueurActu].protégéMiquella) && !(ensembleJoueur[joueurActu].protégéMineraisDeFer)){
+            ensembleJoueur[joueurActu].protégéMiquella = true;
+            int newItem = charAt(ensembleJoueur[joueurActu].tools, 8)-('0');
+            newItem --; 
+            ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 8) + 
+                        intToChar(newItem) +
+                        substring(ensembleJoueur[joueurActu].tools, 9, length(ensembleJoueur[joueurActu].tools));
+            box("La bénédiction de Miquella vous aquiert une protection totale durant les 2 prochains tours !");
+        }else{
+            box("Vous êtes actuellement déja protégé du danger !");
+        }
+
+    }
+
+    void mineraiDeFer(){ //9
+        if(!(ensembleJoueur[joueurActu].protégé) && !(ensembleJoueur[joueurActu].protégéMiquella) && !(ensembleJoueur[joueurActu].protégéMineraisDeFer)){
+            ensembleJoueur[joueurActu].protégéMineraisDeFer = true;
+            int newItem = charAt(ensembleJoueur[joueurActu].tools, 9)-('0');
+            newItem --; 
+            ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 9) + 
+                        intToChar(newItem) +
+                        substring(ensembleJoueur[joueurActu].tools, 10, length(ensembleJoueur[joueurActu].tools));
+            box("Vous parvenez, étonnement, a faire de ce minerai de fer un bouclier de dernier recours. Vous etes protégé jusqu'au prochain choc.");
+        }else{
+            box("Vous êtes actuellement déja protégé du danger !");
+        }
+    }
+
+    void runeDalterationIntimidation(){
+
+    }
+
+    void runeDalterationTemps(){
+
+    }
+
+    void viandeDeKrah(){
+
+    }
 //-------------tableau de jeu--------------------------------------------------------------------------
 
     ContenuCases[][] creerTabContenu(int lignes, int colonnes){
@@ -902,6 +1313,9 @@ int rejouer = 3;
                                 getCell(items, ligneItem, 2),
                                 ligneItem,
                                 StringToInt(getCell(questions, ligneQuestion, 3)),
+                                StringToInt(getCell(questions, ligneQuestion2, 3)),
+                                StringToInt(getCell(questions, ligneQuestion3, 3)),
+
                                 StringToInt(getCell(questions, ligneQuestion, 5)));
             }
         }
@@ -910,24 +1324,32 @@ int rejouer = 3;
     }
 
     ContenuCases[][] placerJoueurs(ContenuCases[][] tab2){
+        caseJoueur = rgb(ensembleJoueur[joueurActu].r,
+                                                        ensembleJoueur[joueurActu].v,
+                                                        ensembleJoueur[joueurActu].b,false) 
+                                                        + " " + ensembleJoueur[joueurActu].skin + " " + RESET;
+        caseJoueur2 = rgb(ensembleJoueur[(joueurActu+1)%length(ensembleJoueur)].r,ensembleJoueur[(joueurActu+1)%length(ensembleJoueur)].v, ensembleJoueur[(joueurActu+1)%length(ensembleJoueur)].b,false) + " " + ensembleJoueur[(joueurActu+1)%length(ensembleJoueur)].skin + " " + RESET;
+        caseJoueur3 = rgb(ensembleJoueur[(joueurActu+2)%length(ensembleJoueur)].r,ensembleJoueur[(joueurActu+2)%length(ensembleJoueur)].v, ensembleJoueur[(joueurActu+2)%length(ensembleJoueur)].b,false) + " " + ensembleJoueur[(joueurActu+2)%length(ensembleJoueur)].skin + " " + RESET;
+        caseJoueur4 = rgb(ensembleJoueur[(joueurActu+3)%length(ensembleJoueur)].r,ensembleJoueur[(joueurActu+3)%length(ensembleJoueur)].v, ensembleJoueur[(joueurActu+3)%length(ensembleJoueur)].b,false) + " " + ensembleJoueur[(joueurActu+3)%length(ensembleJoueur)].skin + " " + RESET;
+
         ContenuCases tab[][] = tab2;
         if(length(ensembleJoueur) == 1){
-            tab[2][0].remplirCase = rgb(255,0,0,false) + " " + ensembleJoueur[joueurActu].skin + " " + RESET;
+            tab[2][0].remplirCase = caseJoueur;
         }
         if(length(ensembleJoueur) == 2){
-            tab[1][0].remplirCase = rgb(255,0,0,false) + " " + ensembleJoueur[joueurActu].skin + " " + RESET;
-            tab[3][0].remplirCase = rgb(0,0,255,false) + " " + ensembleJoueur[joueurActu+1].skin + " " + RESET;
+            tab[1][0].remplirCase = caseJoueur;
+            tab[3][0].remplirCase = caseJoueur2;
         }
         if(length(ensembleJoueur) == 3){
-            tab[0][0].remplirCase = rgb(255,0,0,false) + " " + ensembleJoueur[joueurActu].skin + " " + RESET;
-            tab[2][0].remplirCase = rgb(0,0,255,false) + " " + ensembleJoueur[joueurActu+1].skin + " " + RESET;
-            tab[4][0].remplirCase = rgb(0,255,0,false) + " " + ensembleJoueur[joueurActu+2].skin + " " + RESET;;
+            tab[0][0].remplirCase = caseJoueur;
+            tab[2][0].remplirCase = caseJoueur2;
+            tab[4][0].remplirCase = caseJoueur3;
         }
         if(length(ensembleJoueur) == 4){
-            tab[0][0].remplirCase = rgb(255,0,0,false) + " " + ensembleJoueur[joueurActu].skin + " " + RESET;
-            tab[1][0].remplirCase = rgb(0,0,255,false) + " " + ensembleJoueur[joueurActu+1].skin + " " + RESET;          
-            tab[2][0].remplirCase = rgb(0,255,0,false) + " " + ensembleJoueur[joueurActu+2].skin + " " + RESET;
-            tab[3][0].remplirCase = rgb(255,255,255,false) + " " + ensembleJoueur[joueurActu+3].skin + " " + RESET;
+            tab[0][0].remplirCase = caseJoueur;
+            tab[1][0].remplirCase = caseJoueur2;          
+            tab[2][0].remplirCase = caseJoueur3;
+            tab[3][0].remplirCase = caseJoueur4;
         }
         return tab;
     }
@@ -987,17 +1409,63 @@ int rejouer = 3;
     }
 
     void updateTab(int uneCase){
-        contenuChaqueCase[uneCase][ensembleJoueur[joueurActu].score].remplirCase = rgb(ensembleJoueur[joueurActu].r,
-                                                        ensembleJoueur[joueurActu].v,
-                                                        ensembleJoueur[joueurActu].b,false) 
-                                                        + " " + ensembleJoueur[joueurActu].skin + " " + RESET; 
-        contenuChaqueCase[ensembleJoueur[joueurActu].posX][ensembleJoueur[joueurActu].score-1].remplirCase = "   ";
-        ensembleJoueur[joueurActu].posX = uneCase;
+        contenuChaqueCase[uneCase%5][ensembleJoueur[joueurActu].score].remplirCase = caseJoueur; 
+        readString();
+        contenuChaqueCase[ensembleJoueur[joueurActu].posX][ensembleJoueur[joueurActu].score-ensembleJoueur[joueurActu].vitesse].remplirCase = caseVide;
+        ensembleJoueur[joueurActu].posX = uneCase%5;
+    }
+
+    void clearMoai(){   
+        /*clear moai processus :
+                regarder si moai est présent. Si oui :
+                    regarder coupable. si coupable n'a pas "placé moai" :
+                        alors il VIENT de le placer, donc lui donner "placé moai".
+                    si a la place il a bien "placé moai", 
+                        alors on verif si c'est son tour. Si oui, 
+                            alors le moai est clear, et son "placé moai".
+                */
+        for(int i = 0; i < length(contenuChaqueCase,1); i++){
+            for(int j = 0; j < length(contenuChaqueCase,2); j++){
+                if(contenuChaqueCase[i][j].possedeMoai){
+                    if(ensembleJoueur[contenuChaqueCase[i][j].coupableMoai].moaiPlacé == false){
+                        ensembleJoueur[contenuChaqueCase[i][j].coupableMoai].moaiPlacé = true;
+                    }else{
+                        if(ensembleJoueur[contenuChaqueCase[i][j].coupableMoai].jno == joueurActu){
+                            contenuChaqueCase[i][j].remplirCase = caseVide;
+                            ensembleJoueur[joueurActu].moaiPlacé = false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void clearProtégé(){
+        if(ensembleJoueur[joueurActu].protégé == true){
+            if(ensembleJoueur[joueurActu].protégéBoiteALuciolePrisEnCompte == false){
+                ensembleJoueur[joueurActu].protégéBoiteALuciolePrisEnCompte = true;
+            }else{
+                ensembleJoueur[joueurActu].protégé = true;
+                ensembleJoueur[joueurActu].protégéBoiteALuciolePrisEnCompte = false;
+            }
+        }
+        if(ensembleJoueur[joueurActu].protégéMiquella == true){
+            if(ensembleJoueur[joueurActu].protégéMiquellaPrisEnCompte == 2){
+                ensembleJoueur[joueurActu].protégéMiquellaPrisEnCompte = 1;
+            }
+            else if(ensembleJoueur[joueurActu].protégéMiquellaPrisEnCompte == 1){
+                ensembleJoueur[joueurActu].protégéMiquellaPrisEnCompte = 0;
+                ensembleJoueur[joueurActu].protégéMiquella = false;
+            }
+            else if(ensembleJoueur[joueurActu].protégéMiquellaPrisEnCompte == 0){
+                ensembleJoueur[joueurActu].protégéMiquellaPrisEnCompte = 2;
+            }
+        }
     }
 //-------------autre------------------------------------------------------------------------------------------------------
 
-    boolean verifQuestion(int réponse, String saisie){
-        if(réponse == StringToInt(saisie)){
+    boolean verifQuestion(int saisie, String reponse){
+        if(saisie == StringToInt(reponse)){
             return true;
         }else{
             println("Je suis désolé messager " + ensembleJoueur[joueurActu].nom + ", tu vas devoir rester un moment dans cet endroit.");
@@ -1039,12 +1507,12 @@ int rejouer = 3;
 
             print("Votre choix : "); //choix (chiffre)
             saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie, intToString(rowCount(comptes)))) || StringToInt(saisie) <= 0){
+            if(!(controleSaisieInt(saisie, intToString(rowCount(comptes))))){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "99";
             }
-        }while(!(controleSaisieInt(saisie, intToString(rowCount(comptes)))) || StringToInt(saisie) <= 0); //on est sur que l'entrée est bonne
+        }while(!(controleSaisieInt(saisie, intToString(rowCount(comptes))))); //on est sur que l'entrée est bonne
         return saisie;
     }
 
@@ -1122,12 +1590,12 @@ int rejouer = 3;
                     "- 6 : supprimer votre compte\n");
             print("Votre choix : ");
             saisie = readString();
-            if(equals(saisie,"") || !(controleSaisieInt(saisie,"6")) || StringToInt(saisie) <= 0){
+            if(!(controleSaisieInt(saisie,"6"))){
                 ligne();
                 box("/!\\ Saisie incorrecte /!\\");
                 saisie = "9";
             }
-        }while(!(controleSaisieInt(saisie, "6")) || StringToInt(saisie) <= 0);
+        }while(!(controleSaisieInt(saisie, "6")));
 
         if(StringToInt(saisie) == 1){ //voir stats
             stats(compte);
@@ -1357,6 +1825,8 @@ int rejouer = 3;
         assertTrue(controleSaisieInt("3","3"));
         assertFalse(controleSaisieInt("4","3"));
         assertFalse(controleSaisieInt("0","3"));
+        assertFalse(controleSaisieInt("a","2545"));
+        assertFalse(controleSaisieInt("","28"));
 
     }
 

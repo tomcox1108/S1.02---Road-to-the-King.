@@ -6,7 +6,11 @@ class ContenuCases{
     String apparitionItem;
     String descItem;
     int ligneItem;
-    int reponse;
+    int reponse1;
+    int reponse2;
+    int reponse3;
+    boolean possedeMoai = false;
+    int coupableMoai = 0;
     int temps;
     String remplirCase = "   ";
 }
