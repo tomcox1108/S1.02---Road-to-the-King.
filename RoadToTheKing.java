@@ -2,8 +2,6 @@
 TODO : 
 - rédiger et implémenter les règles
 - implementer la fonction de save a la fin de chaque game
-- implémenter la fonction d'objets (simple) -> objets en eux meme fait, commandes externes aussi (sauf usage et aide)
-- implémenter les lectures et usages d'objet (1 fonction / objet)
 - //implémenter les boss ?
 */
 
@@ -14,7 +12,7 @@ class RoadToTheKing extends Program{
 
     //utilitaires
     final String clear = "\033[H\033[2J\033[3J";
-    final String ensembleSkins = "◎⩇⁝⬔🗝⧖⚙𝓩𝓐⚖ڽ﷼⚔✟✠☠⚡︎⌘⏀⛩☯✧❂*☭";
+    final String ensembleSkins = "◎⩇⁝☾⧖⚙ℤЖ⚖⚔Ψ✟✠☠⚡⌘⏀Ω⛩☯好✧❂♛☭";
 
     //csv
     CSVFile comptes = loadCSV("CSV/comptes.CSV");
@@ -79,12 +77,12 @@ class RoadToTheKing extends Program{
             }
 
             //LES REGLES
-            /* if(premierChoix == 3){
-                File règles = newFile("txt/règles.txt");
+            if(premierChoix == 3){
+                File règles = newFile("txt/regles.txt");
                 while(ready(règles)){
                     println(readLine(règles));
-                }*
-            } */
+                }
+            }
 
             //QUITTER LE PROGRAMME
             if (premierChoix == 4){
@@ -106,11 +104,11 @@ class RoadToTheKing extends Program{
         println("Merci de bien vouloir mettre le jeu en plein ecran pour jouer.");
         ligne();
         print("Pressez ENTRÉE pour continuer.");
-        readString();
+        attendreEntree();
         while(ready(ecranTitre)){
             println(readLine(ecranTitre));
         }
-        readString();
+        attendreEntree();
         print(clear);
     }
 //-------------premier choix-----------------------------------------------------------------------------
@@ -248,6 +246,10 @@ class RoadToTheKing extends Program{
         print('╚');
         ligne(48,'═');
         println('╝');
+    }
+
+    void attendreEntree() {
+        readString();
     }
 //-------------convertions-----------------------------------------------------------------------------
     int StringToInt(String entree){
@@ -555,8 +557,7 @@ class RoadToTheKing extends Program{
     boolean commandeExterne(String saisie){
         if(equals(saisie, "T") ||
             equals(saisie, "S") ||
-            equals(saisie, "U") ||
-            equals(saisie, "I")){
+            equals(saisie, "U")){
             return true;
         }
         return false;
@@ -565,7 +566,7 @@ class RoadToTheKing extends Program{
     boolean decrypterCasesPossibles(String[] casesPossibles, String saisie){
         boolean result = false;
         for(int i = 0; i < length(casesPossibles); i++){
-            if(equals(casesPossibles[i],saisie)){
+            if(StringToInt(casesPossibles[i]) == StringToInt(saisie)){
                 result = true;
             }
         }
@@ -582,6 +583,7 @@ class RoadToTheKing extends Program{
         contenuChaqueCase = creerTabContenu(5,partie.scoreDeVictoire+1);
         contenuChaqueCase = placerJoueurs(contenuChaqueCase);
         while(scoreMax() < partie.scoreDeVictoire){
+            boolean raté = false;
             print(clear);
             ligne();
             afficherTab(contenuChaqueCase);
@@ -604,12 +606,22 @@ class RoadToTheKing extends Program{
                 ligne();
                 println("");
                 if(uneCase != -1){
-                    tourQuestion(uneCase); //partie gameplay du tour
+                    raté = tourQuestion(uneCase); //partie gameplay du tour
                 }
-                readString();
             }
-
-            joueurActu = (joueurActu + 1)%length(ensembleJoueur); //change joueur
+            ensembleJoueur[joueurActu].vitesse = 1;
+            if(!(raté && ensembleJoueur[joueurActu].secondeVie) || scoreMax() != partie.scoreDeVictoire){
+                clearProtégé();
+                clearMoai();
+                clearRunes();
+                ensembleJoueur[joueurActu].vitesse = 1;
+                joueurActu = (joueurActu + 1)%length(ensembleJoueur); //change joueur
+            }else{
+                clearProtégé();
+                clearMoai();
+                clearRunes();
+                ensembleJoueur[joueurActu].vitesse = 1;
+            }
         }
 
         tourVictoire();
@@ -640,9 +652,9 @@ class RoadToTheKing extends Program{
         return toolsListe;
     }
 
-    void tourQuestion(int uneCase){
+    boolean tourQuestion(int uneCase){
         box("Pressez \"entrée\" pour reveler la question.");
-        readString();
+        attendreEntree();
         //debut timer
         long debut = getTime();
         String questionReponse;
@@ -654,14 +666,48 @@ class RoadToTheKing extends Program{
         String question = "";
         String reponse = "";
         boolean isQuestion = true;
-        for(int i = 0; i< length(questionReponse); i++){
-            if(charAt(questionReponse,i) != '£' && isQuestion){
-                question = question + charAt(questionReponse,i);
+        if(ensembleJoueur[joueurActu].confus){
+            for(int i = 0; i< length(questionReponse); i++){
+                if(charAt(questionReponse,i) != '£' && isQuestion){
+                    int random = (int)(random()*101);
+                    if(random >= 0 && random < 75){
+                        question = question + charAt(questionReponse,i);
+                    }
+                    else if(random >= 75 && random < 79){
+                        question = question + "*";
+                    }
+                    else if(random >= 79 && random < 83){
+                        question = question + "⁇";
+                    }
+                    else if(random >= 83 && random < 87){
+                        question = question + "¿";
+                    }
+                    else if(random >= 87 && random < 90){
+                        question = question + "#";
+                    }
+                    else if(random >= 90 && random < 100){
+                        //rien
+                    }
+                    else if(random == 100){
+                        question = question + "☭";
+                    }
+                }
+                else if(charAt(questionReponse,i) != '£' && !isQuestion){
+                    reponse = reponse + charAt(questionReponse,i);  
+                }else{
+                    isQuestion = !isQuestion;
+                }
             }
-            else if(charAt(questionReponse,i) != '£' && !isQuestion){
-                reponse = reponse + charAt(questionReponse,i);  
-            }else{
-                isQuestion = !isQuestion;
+        }else{
+            for(int i = 0; i< length(questionReponse); i++){
+                if(charAt(questionReponse,i) != '£' && isQuestion){
+                    question = question + charAt(questionReponse,i);
+                }
+                else if(charAt(questionReponse,i) != '£' && !isQuestion){
+                    reponse = reponse + charAt(questionReponse,i);  
+                }else{
+                    isQuestion = !isQuestion;
+                }
             }
         }
         println("Question :");
@@ -675,6 +721,7 @@ class RoadToTheKing extends Program{
                 " secondes.)");
         }
         String votreReponse;
+        boolean raté = false;
         do{
             print("Votre réponse : ");
             votreReponse = readString();
@@ -695,16 +742,22 @@ class RoadToTheKing extends Program{
                     box("Vous avez mis " + tempsPris + "s à répondre.");
                 }else if(partie.coeffTemps != 6){
                     box("Vous avez mis trop de temps à répondre messager. Soit " + tempsPris + " secondes.");
-                }else if(partie.coeffTemps == 6){
+                }else if(partie.coeffTemps == 6){ //si temps infini
+                    if(ensembleJoueur[joueurActu].score < 9){
+                        println("Bien joué messager " + ensembleJoueur[joueurActu].nom + ", tu peux continuer ton chemin !");
+                    }
                     ensembleJoueur[joueurActu].score = ensembleJoueur[joueurActu].score + ensembleJoueur[joueurActu].vitesse;
                     updateTab(uneCase);
                 }
+            }else{
+                raté = true;
+                println("Je suis désolé messager " + ensembleJoueur[joueurActu].nom + ", tu vas devoir rester un moment dans cet endroit.");
             }
-            ensembleJoueur[joueurActu].vitesse = 1;
-            clearMoai();
         }while(equals(votreReponse,""));
+        readString();
         long fin = getTime();
         //fin timer
+        return raté;
     }
 
     String questionAleatoire(int uneCase){
@@ -730,8 +783,76 @@ class RoadToTheKing extends Program{
     void tourVictoire(){
         print(clear);
         ligne();
-        box("Bien joué ! Le messager " + ensembleJoueur[joueurActu].nom + " a atteint le score de " + partie.scoreDeVictoire + " et remporte la partie ! Félicitations !");
+        box("Un cours mutilé, recouvert de coups, de cicatrices, mais de courage. C'est ce dernier qui, avec sa peau pale et ces yeux qui tombes, a amené " + ensembleJoueur[joueurActu].nom + " au bout : le palais du roi.");
+        box("Bien joué ! Le messager " + ensembleJoueur[joueurActu].nom + " a atteint le score de " + partie.scoreDeVictoire + " et devient le nouveau messager du roi ! Félicitations !");
+        String[][] save = new String[rowCount(comptes)][columnCount(comptes)];
+        for(int i = 0; i < rowCount(comptes); i++){
+            for(int j = 0; j < columnCount(comptes); j++){
+                save[i][j] = getCell(comptes, i, j);
+            }
+        }
+        readString();
+        save = remplirGagnant(save);
+        save = remplirAutre(save);
+        save = skinADebloquer(save);
+        saveCSV(save, "CSV/comptes.csv");        
     }
+
+
+//--------------save fin de game----------------------------------------------------------------------------------
+    String[][] remplirGagnant(String[][] save){
+        ligne();
+        for(int i = 1; i < length(save,1); i++){
+            ligne();
+            if(equals(ensembleJoueur[joueurActu].nom,getCell(comptes,i,0))){
+                save[i][4] = "" + (StringToInt(save[i][4])+1);
+                save[i][3] = "" + (StringToInt(save[i][3])+30);
+                if(StringToInt(save[i][3]) >= 100){
+                    save[i][3] = "" + (StringToInt(save[i][3])-100);
+                    save[i][2] = "" + (StringToInt(save[i][2])+1);
+                }
+            }
+        }
+        return save;
+    }
+
+    String[][] remplirAutre(String[][] save){
+        for(int i = 1; i < length(ensembleJoueur); i++){
+            ligne();
+            for(int j = 1; j < length(save,1); j++){
+                ligne();
+                if(equals(ensembleJoueur[i].nom, getCell(comptes,j,0))){
+                    save[j][5] = "" + (StringToInt(save[j][5])+1);
+                    save[i][3] = "" + (StringToInt(save[i][3])+10);
+                    if(StringToInt(save[j][3]) >= 100){
+                        save[j][3] = "" + (StringToInt(save[j][3])-100);
+                        save[j][2] = "" + (StringToInt(save[j][2])+1);
+                        
+                    }
+                }
+            }
+        }
+        return save;
+    }
+
+    String[][] skinADebloquer(String[][] save){
+        for(int i = 1; i < length(save,1); i++){ // pour chaque compte
+            int niveau = StringToInt(save[i][2]);
+            String lesSkins = "";
+
+            for(int j = 0; j < length(ensembleSkins); j++){
+                if(j < niveau){
+                    lesSkins = lesSkins + "1";
+                }else{
+                    lesSkins = lesSkins + "0";
+                }
+            }
+
+            save[i][6] = lesSkins;
+        }
+        return save;
+    }
+
 
 
     int choixCase(){
@@ -757,7 +878,7 @@ class RoadToTheKing extends Program{
                     }
                 }
                 if(i == 1){
-                    casesPossibles2 = casesPossibles(6, ensembleJoueur[joueurActu].score+1);
+                    casesPossibles2 = casesPossibles(6, ensembleJoueur[joueurActu].score+2);
                     if(i == 1){
                         texte = texte + (" Ou encore devant : (");
                     }
@@ -773,7 +894,7 @@ class RoadToTheKing extends Program{
                     }
                 }
                 if(i == 2){
-                    casesPossibles3 = casesPossibles(11, ensembleJoueur[joueurActu].score+1);
+                    casesPossibles3 = casesPossibles(11, ensembleJoueur[joueurActu].score+3);
                     if(i > 1){
                         texte = texte +(" Ou encore plus loin ! (");
                     }
@@ -808,8 +929,25 @@ class RoadToTheKing extends Program{
 
             if(equals(casesPossibles[0],"bloqué") && equals(casesPossibles2[0],"bloqué") && equals(casesPossibles3[0],"bloqué")){
                 box("Vous n'avez nulle part ou aller messager... Prenez un peu de repos.");
-                readString();
+                attendreEntree();
                 return -1;
+            }
+            else if(ensembleJoueur[joueurActu].vitesse == 0){
+                box("Tombant, sur les genoux, vous souffrez. La malédiciton à pris le dessus. Reposez vous un peu.");
+                attendreEntree();
+                return -1;
+            }else if(ensembleJoueur[joueurActu].bloqué != 0){
+                ensembleJoueur[joueurActu].bloqué --;
+                int random = (int)(random()*2);
+                if(random == 1){
+                    box(texte);
+                    println("- \"T\" pour voir vos items");
+                    println("- \"S\" pour voir vos stats");
+                    println("- \"U\" pour utiliser vos items");
+                }else{
+                    box("Le froid monte encore en vous, les pas deviennent dures, la tete devient lourde. Jamais vous n'aurais cru un jour voir un simple aiguille être si compomettente.");
+                    return -1;
+                }
             }else{
                 box(texte);
                 println("- \"T\" pour voir vos items");
@@ -872,9 +1010,6 @@ class RoadToTheKing extends Program{
         else if(equals(saisie,"U")){
             utiliserItems(ensembleJoueur[joueurActu].tools);
         }
-        else if(equals(saisie,"I")){
-            //afficherRègles(); //
-        }
     }
 
     void afficherTools(String tools){
@@ -900,25 +1035,28 @@ class RoadToTheKing extends Program{
     void afficherStats(Joueur joueur){
         box("Messager " + joueur.nom + " !");
         println("Actuellement, vous :");
-        if(!(joueur.protégé)){
+        if(!(joueur.protégé) && !(joueur.protégéMiquella) && !(joueur.protégéMineraisDeFer)){
             print("N'etes pas protégé du danger");
-            if(!(joueur.bloqué)){
-                println(".\nMais vous n'etes pas bloqué !");
+            if(joueur.bloqué == 0){
+                println(".\nMais vous n'etes pas givré !");
             }else{
-                println(",\net vous êtes actuellement bloqué...");
+                println(",\net vous êtes actuellement givré...");
             }
         }else{
             println("Êtes protégé du danger");
-            if(!(joueur.bloqué)){
-                println("et vous n'etes actuellement pas bloqué !");
+            if(!(joueur.bloqué == 0)){
+                println("et vous n'etes actuellement pas givré !");
             }else{
-                println("mais vous êtes actuellement bloqué...");
+                println("mais vous êtes actuellement givré...");
             }
         }
         print("Vous pouvez avancer de " + joueur.vitesse + " case par tour");
-        if(!(joueur.secondeVie)){
+        if(joueur.vitesse == 0){
             println(",");
-            println("et vous n'avez qu'une seule chance par question...");
+            print("autrement dit, vous êtes maudit.");
+        }
+        if(!(joueur.secondeVie)){
+            println("\net vous n'avez qu'une seule chance par question...");
         }else{
             println("\net vous avez en plus de ca une seconde chance lors de votre prochaine erreur !");
         }
@@ -975,92 +1113,36 @@ class RoadToTheKing extends Program{
         }
         else if(StringToInt(saisie) == 2 && charAt(itemsListe,2) != '0'){
             monolitheDePoche();
-            int newItem = charAt(itemsListe, 2)-('0');
-            newItem --;
-            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 2) + 
-                        intToChar(newItem) +
-                        substring(itemsListe, 3, length(itemsListe));
         }
         else if(StringToInt(saisie) == 3 && charAt(itemsListe,3) != '0'){
-            runeDalterationRealite();
-            int newItem = charAt(itemsListe, 3)-('0');
-            newItem --;
-            ensembleJoueur[joueurActu].tools  = substring(itemsListe, 0, 3) + 
-                        intToChar(newItem) +
-                        substring(itemsListe, 4, length(itemsListe));
+            runeDalterationTemps();
         }
         else if(StringToInt(saisie) == 4 && charAt(itemsListe,4) != '0'){
             ailesDechuesDeLOrin();
-            int newItem = charAt(itemsListe, 4)-('0');
-            newItem --;
-            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 4) + 
-                        intToChar(newItem) +
-                        substring(itemsListe, 5, length(itemsListe));
         }
         else if(StringToInt(saisie) == 5 && charAt(itemsListe,5) != '0'){
             oeilOmniscientDeMiquella();
-            int newItem = charAt(itemsListe, 5)-('0');
-            newItem --;
-            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 5) + 
-                        intToChar(newItem) +
-                        substring(itemsListe, 6, length(itemsListe));
         }
         else if(StringToInt(saisie) == 6 && charAt(itemsListe, 6) != '0'){
             epeeMaudite();
-            int newItem = charAt(itemsListe, 6)-('0');
-            newItem --;
-            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 6) + 
-                        intToChar(newItem) +
-                        substring(itemsListe, 7, length(itemsListe));
         }
         else if(StringToInt(saisie) == 7 && charAt(itemsListe,7) != '0'){
             aiguilleDeGivre();
-            int newItem = charAt(itemsListe, 7)-('0');
-            newItem --;
-            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 7) + 
-                        intToChar(newItem) +
-                        substring(itemsListe, 8, length(itemsListe));
         }
         else if(StringToInt(saisie) == 8 && charAt(itemsListe, 8) != '0'){
             benedictionDeMiquella();
-            int newItem = charAt(itemsListe, 8)-('0');
-            newItem --;
-            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 8) + 
-                        intToChar(newItem) +
-                        substring(itemsListe, 9, length(itemsListe));
         }
         else if(StringToInt(saisie) == 9 && charAt(itemsListe,9) != '0'){
             mineraiDeFer();
-            int newItem = charAt(itemsListe, 9)-('0');
-            newItem --;
-            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 9) + 
-                        intToChar(newItem) +
-                        substring(itemsListe, 10, length(itemsListe));
-                        println(substring(itemsListe, 0, 0) + "/" + intToChar(newItem) + "/" + substring(itemsListe, 1, length(itemsListe)));
         }
         else if(StringToInt(saisie) == 10 && charAt(itemsListe,10) != '0'){
             runeDalterationIntimidation();
-            int newItem = charAt(itemsListe, 10)-('0');
-            newItem --;
-            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 10) + 
-                        intToChar(newItem) +
-                        substring(itemsListe, 11, length(itemsListe));
         }
         else if(StringToInt(saisie) == 11 && charAt(itemsListe,11) != '0'){
-            runeDalterationTemps();
-            int newItem = charAt(itemsListe, 11)-('0');
-            newItem --;
-            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 11) + 
-                        intToChar(newItem) +
-                        substring(itemsListe, 12, length(itemsListe));
+            runeDalterationRealite();
         }
         else if(StringToInt(saisie) == 12 && charAt(itemsListe,12) != '0'){
             viandeDeKrah();
-            int newItem = charAt(itemsListe, 12)-('0');
-            newItem --;
-            ensembleJoueur[joueurActu].tools = substring(itemsListe, 0, 12) + 
-                        intToChar(newItem) +
-                        substring(itemsListe, 13, length(itemsListe));
         }else{
             ligne();
             println("Vous n'avez pas cet objet.");
@@ -1083,30 +1165,33 @@ class RoadToTheKing extends Program{
     }
     
     void monolitheDePoche(){ //2
+        int cpt = 0;
         box("Voici toutes les cases ou vous pouvez placer le monolithe :");
         String[] ensembleCasesDerriere = new String[]{"16"};
         if(ensembleJoueur[joueurActu].score > 0){
-            println("Sur les cases derriere vous : ");
             ensembleCasesDerriere = casesPossibles(1, ensembleJoueur[joueurActu].score-1);
+            println("Sur les cases derriere vous : ");
             for(int i = 0; i < length(ensembleCasesDerriere); i++){
                 print(ensembleCasesDerriere[i] + ", ");
             }
             println();
         }
-        println("Sur les cases sur votre ligne : ");
         String[] ensembleCasesMaLigne = casesPossibles(6, ensembleJoueur[joueurActu].score);
-        for(int i = 0; i < length(ensembleCasesMaLigne); i++){
-                print(ensembleCasesMaLigne[i] + ", ");
-            }
-        println();
-        
-        println("Sur les cases devant vous : ");
+        if(!(equals(ensembleCasesMaLigne[0], "bloqué"))){
+            println("Sur les cases sur votre ligne : ");
+            for(int i = 0; i < length(ensembleCasesMaLigne); i++){
+                    print(ensembleCasesMaLigne[i] + ", ");
+                }
+            println();
+        }
         String[] ensembleCasesDevant = casesPossibles(11, ensembleJoueur[joueurActu].score+1);
-        for(int i = 0; i < length(ensembleCasesDevant); i++){
-                print(ensembleCasesDevant[i] + ", ");
-            }
-        println();
-
+        if(!(equals(ensembleCasesDevant[0], "bloqué"))){
+            println("Sur les cases devant vous : ");
+            for(int i = 0; i < length(ensembleCasesDevant); i++){
+                    print(ensembleCasesDevant[i] + ", ");
+                }
+            println();
+        }
         String saisie;
         do{
             print("Choisissez une case parmi celles-ci (ou Q pour quitter) : ");
@@ -1127,12 +1212,18 @@ class RoadToTheKing extends Program{
                 !(decrypterCasesPossibles(ensembleCasesMaLigne, saisie)) &&
                 !(decrypterCasesPossibles(ensembleCasesDevant, saisie)));
         
-        contenuChaqueCase[(StringToInt(saisie)%5)-1][(ensembleJoueur[joueurActu].score-1)+(StringToInt(saisie)-1)/5].remplirCase = caseMonolith;
-        contenuChaqueCase[(StringToInt(saisie)%5)-1][(ensembleJoueur[joueurActu].score-1)+(StringToInt(saisie)-1)/5].possedeMoai = true;
-        contenuChaqueCase[(StringToInt(saisie)%5)-1][(ensembleJoueur[joueurActu].score-1)+(StringToInt(saisie)-1)/5].coupableMoai = ensembleJoueur[joueurActu].jno;
+        contenuChaqueCase[(StringToInt(saisie)-1)%5][(ensembleJoueur[joueurActu].score-1)+(StringToInt(saisie)-1)/5].remplirCase = caseMonolith;
+        contenuChaqueCase[(StringToInt(saisie)-1)%5][(ensembleJoueur[joueurActu].score-1)+(StringToInt(saisie)-1)/5].possedeMoai = true;
+        contenuChaqueCase[(StringToInt(saisie)-1)%5][(ensembleJoueur[joueurActu].score-1)+(StringToInt(saisie)-1)/5].coupableMoai = ensembleJoueur[joueurActu].jno-1;
         box("Votre monolithe a été placé avec succès !!");
-        readString();
+        int newItem = charAt(ensembleJoueur[joueurActu].tools, 2)-('0');
+        newItem --; 
+        ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 2) + 
+                    intToChar(newItem) +
+                    substring(ensembleJoueur[joueurActu].tools, 3, length(ensembleJoueur[joueurActu].tools));
+        attendreEntree();
         print(clear);
+        ligne();
         afficherTab(contenuChaqueCase);
     }
 
@@ -1167,8 +1258,20 @@ class RoadToTheKing extends Program{
         return ensembleCases;
     }
 
-    void runeDalterationRealite(){ //3
-
+    void runeDalterationTemps(){ //3
+        if(!(ensembleJoueur[joueurActu].secondeVie)){
+            ensembleJoueur[joueurActu].secondeVie = true;
+            int newItem = charAt(ensembleJoueur[joueurActu].tools, 3)-('0');
+            newItem --; 
+            ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 3) + 
+                        intToChar(newItem) +
+                        substring(ensembleJoueur[joueurActu].tools, 4, length(ensembleJoueur[joueurActu].tools));
+            box("La rune s'est expendu, dans une forme encore jamais vu auparavent. Indescriptible. Iréelle. Mais pour autant a votre portée... Si vous ratez la prochaine question, vous aurez le droit a une seconde chance.");
+            attendreEntree();
+        }else{
+            box("Vous avez déja dompté une premiere rune de temps, la seconde pourrait vous tuer.");
+            attendreEntree();
+        }
     }
 
     void ailesDechuesDeLOrin(){ //4
@@ -1176,33 +1279,117 @@ class RoadToTheKing extends Program{
             box("M'enfin ! Si proche de l'arrivée... faite le a la loyale, pardi !");
         }else if(ensembleJoueur[joueurActu].vitesse + ensembleJoueur[joueurActu].score > partie.scoreDeVictoire){
             println("Premier degres vous n'etes pas sensé etre la. Si vous voyez ce message, le programme va crash et vous avez trouvé un bug. GG lol");
-        }else{
+        }else if(ensembleJoueur[joueurActu].vitesse == 3){
+            box("Malgré tous vos efforts, les 2 couches d'ailes que vous avez deja mis vous bloque à en mettre une troisieme.");
+        }
+        else{
             ensembleJoueur[joueurActu].vitesse += 1;
+            int newItem = charAt(ensembleJoueur[joueurActu].tools, 4)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 4) + 
+                        intToChar(newItem) +
+                        substring(ensembleJoueur[joueurActu].tools, 5, length(ensembleJoueur[joueurActu].tools));
             box("D'un pelage si doux et pourtant si intimidant, vous parvenez à enfiler ces ailes d'Ørin, étonnement plutot ergonomique. Ce don venant d'un être à la pointe de l'évolution, de ce rapace concidéré comme un divinité par sa perfection,  vous permettera d'elever votre a " + ensembleJoueur[joueurActu].vitesse + " jusqu'au prochain tour.");
+            attendreEntree();
         }
 
     }
 
     void oeilOmniscientDeMiquella(){ //5
+        ligne();
         ensembleJoueur[joueurActu].vista = true;
         String saisie;
         String[] casesPossibles = casesPossibles(1,ensembleJoueur[joueurActu].score+1);
         do{
-            print("De quelle case voulez-vous voir l'avenir ? : ");
+            String texte = "De quelle case voulez-vous voir l'avenir ? (";
+            for(int j = 0; j < length(casesPossibles); j++){
+                if(length(casesPossibles) - j == 1){
+                    texte = texte + casesPossibles[j] + ") : ";
+                }
+                else if(length(casesPossibles) - j == 2){
+                    texte = texte + casesPossibles[j] + " ou ";
+                }else{
+                    texte = texte + (casesPossibles[j]) + ", ";
+                }
+            }
+            print(texte);
             saisie = readString();
             if(!(decrypterCasesPossibles(casesPossibles, saisie))){
                 box("/!\\ saisie incorrecte /!\\");
             }
         }while(!(decrypterCasesPossibles(casesPossibles, saisie)));
-        println("La question sur cette case : " + contenuChaqueCase[StringToInt(saisie)][ensembleJoueur[joueurActu].score+1].question1);
+        int newItem = charAt(ensembleJoueur[joueurActu].tools, 5)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 5) + 
+                        intToChar(newItem) +
+                        substring(ensembleJoueur[joueurActu].tools, 6, length(ensembleJoueur[joueurActu].tools));
+        box("La question sur cette case : " + contenuChaqueCase[StringToInt(saisie)-1][ensembleJoueur[joueurActu].score].question1);
     }
 
-    void epeeMaudite(){
-
+    void epeeMaudite(){ //6
+        box("Les joueurs :");
+        for(int i = 0; i < length(ensembleJoueur); i++){
+            println(i+1 + " : " + ensembleJoueur[i].nom);
+        }
+        String saisie;
+        do{
+            println("Qui voulez-vous maudire ? (\"Q\" pour quitter) : ");
+            saisie = readString();
+            if(equals(saisie, "Q")){
+                return;
+            }
+            if(!(controleSaisieInt(saisie, intToString(length(ensembleJoueur))))){
+                box("/!\\ saisie incorrecte /!\\");
+            }
+        }while(!(controleSaisieInt(saisie, intToString(length(ensembleJoueur)))));
+        int newItem = charAt(ensembleJoueur[joueurActu].tools, 6)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 6) + 
+                        intToChar(newItem) +
+                        substring(ensembleJoueur[joueurActu].tools, 7, length(ensembleJoueur[joueurActu].tools));
+        if(ensembleJoueur[StringToInt(saisie)-1].protégé || 
+            ensembleJoueur[StringToInt(saisie)-1].protégéMiquella || 
+            ensembleJoueur[StringToInt(saisie)-1].protégéMineraisDeFer){
+                box(ensembleJoueur[StringToInt(saisie)-1].nom + " est protégé et pare votre attaque !");
+                ensembleJoueur[StringToInt(saisie)-1].protégéMineraisDeFer = false;
+                ligne();
+        }else{
+            ensembleJoueur[StringToInt(saisie)-1].vitesse = 0;
+            box(ensembleJoueur[StringToInt(saisie)-1].nom + " est maintenant maudit.");
+        }
     }
 
-    void aiguilleDeGivre(){
-
+    void aiguilleDeGivre(){ //7
+        box("Les joueurs :");
+        for(int i = 0; i < length(ensembleJoueur); i++){
+            println(i+1 + " : " + ensembleJoueur[i].nom);
+        }
+        String saisie;
+        do{
+            println("Qui voulez-vous percer en plein coeur ? (\"Q\" pour quitter) : ");
+            saisie = readString();
+            if(equals(saisie, "Q")){
+                return;
+            }
+            if(!(controleSaisieInt(saisie, intToString(length(ensembleJoueur))))){
+                box("/!\\ saisie incorrecte /!\\");
+            }
+        }while(!(controleSaisieInt(saisie, intToString(length(ensembleJoueur)))));
+        int newItem = charAt(ensembleJoueur[joueurActu].tools, 7)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 7) + 
+                        intToChar(newItem) +
+                        substring(ensembleJoueur[joueurActu].tools, 8, length(ensembleJoueur[joueurActu].tools));
+        if(ensembleJoueur[StringToInt(saisie)-1].protégé || 
+            ensembleJoueur[StringToInt(saisie)-1].protégéMiquella || 
+            ensembleJoueur[StringToInt(saisie)-1].protégéMineraisDeFer){
+                box(ensembleJoueur[StringToInt(saisie)-1].nom + " est protégé et pare votre attaque !");
+                ensembleJoueur[StringToInt(saisie)-1].protégéMineraisDeFer = false;
+                ligne();
+        }else{
+            ensembleJoueur[StringToInt(saisie)-1].bloqué = 4;
+            box(ensembleJoueur[StringToInt(saisie)-1].nom + " est maintenant givré.");
+        }
     }
 
     void benedictionDeMiquella(){ //8
@@ -1234,15 +1421,83 @@ class RoadToTheKing extends Program{
         }
     }
 
-    void runeDalterationIntimidation(){
-
+    void runeDalterationIntimidation(){ //10
+        box("Les joueurs :");
+        for(int i = 0; i < length(ensembleJoueur); i++){
+            println(i+1 + " : " + ensembleJoueur[i].nom);
+        }
+        String saisie;
+        do{
+            println("Qui voulez-vous intimider ? (\"Q\" pour quitter) : ");
+            saisie = readString();
+            if(equals(saisie, "Q")){
+                return;
+            }
+            if(!(controleSaisieInt(saisie, intToString(length(ensembleJoueur))))){
+                box("/!\\ saisie incorrecte /!\\");
+            }
+        }while(!(controleSaisieInt(saisie, intToString(length(ensembleJoueur)))));
+        int newItem = charAt(ensembleJoueur[joueurActu].tools, 10)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 10) + 
+                        intToChar(newItem) +
+                        substring(ensembleJoueur[joueurActu].tools, 11, length(ensembleJoueur[joueurActu].tools));
+        if(ensembleJoueur[StringToInt(saisie)-1].protégé || 
+            ensembleJoueur[StringToInt(saisie)-1].protégéMiquella || 
+            ensembleJoueur[StringToInt(saisie)-1].protégéMineraisDeFer){
+                box(ensembleJoueur[StringToInt(saisie)-1].nom + " est protégé et pare votre attaque !");
+                ensembleJoueur[StringToInt(saisie)-1].protégéMineraisDeFer = false;
+                ligne();
+        }else{
+            ensembleJoueur[StringToInt(saisie)-1].confus = true;
+            box(ensembleJoueur[StringToInt(saisie)-1].nom + " est maintenant confus.");
+        }
     }
 
-    void runeDalterationTemps(){
+    void runeDalterationRealite(){ //11
+        int newItem = charAt(ensembleJoueur[joueurActu].tools, 11)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 11) + 
+                        intToChar(newItem) +
+                        substring(ensembleJoueur[joueurActu].tools, 12, length(ensembleJoueur[joueurActu].tools));
+        String saisie;
+        do{
+            print("Sur quelle case de votre rangée voulez vous vous déplacer ? (de 1 à 5) (\"Q\" pour quitter) : ");
+            saisie = readString();
+            if(equals(saisie, "Q")){
+                return;
+            }
+            if(!(controleSaisieInt(saisie, "5"))){
+                box("/!\\ saisie incorrecte /!\\");
+            }
 
+        }while(!(controleSaisieInt(saisie, "5")));
+        contenuChaqueCase[ensembleJoueur[joueurActu].posX][ensembleJoueur[joueurActu].score].remplirCase = caseVide; 
+        ensembleJoueur[joueurActu].posX = StringToInt(saisie)-1;
+        box("Le temps s'arrete, la réalité se déconstruit. Ce phénomène est tellement puissant que vous vous evanouissez. A votre réveil, vous n'êtes plus au meme endroit.");
+        attendreEntree();
+        print(clear);
+        ligne();
+                contenuChaqueCase[ensembleJoueur[joueurActu].posX][ensembleJoueur[joueurActu].score].remplirCase = rgb(ensembleJoueur[(joueurActu)%length(ensembleJoueur)].r,ensembleJoueur[(joueurActu)%length(ensembleJoueur)].v, ensembleJoueur[(joueurActu)%length(ensembleJoueur)].b,false) + " " + ensembleJoueur[(joueurActu)%length(ensembleJoueur)].skin + " " + RESET; 
+        afficherTab(contenuChaqueCase);
     }
 
-    void viandeDeKrah(){
+    void viandeDeKrah(){ //12
+        ligne();
+        int newItem = charAt(ensembleJoueur[joueurActu].tools, 12)-('0');
+            newItem --;
+            ensembleJoueur[joueurActu].tools = substring(ensembleJoueur[joueurActu].tools, 0, 12) + 
+                        intToChar(newItem) +
+                        substring(ensembleJoueur[joueurActu].tools, 13, length(ensembleJoueur[joueurActu].tools));
+        String saisie;
+        String[] casesPossibles = casesPossibles(1,ensembleJoueur[joueurActu].score+1);
+        box("Malgré le dégout, les temps sont atroces. Vous payez votre honneur contre ce morceau de \"viande\" putride.");
+        attendreEntree();
+        ligne();
+        for(int i = 0; i < length(casesPossibles); i++){
+            println("case " + (i+1) + " : ");
+            box(getCell(items,contenuChaqueCase[i][ensembleJoueur[joueurActu].score+1].ligneItem,0) + " : " + contenuChaqueCase[i][ensembleJoueur[joueurActu].score+1].descItem);
+        }
 
     }
 //-------------tableau de jeu--------------------------------------------------------------------------
@@ -1319,15 +1574,12 @@ class RoadToTheKing extends Program{
                                 StringToInt(getCell(questions, ligneQuestion, 5)));
             }
         }
-        readString();
+        attendreEntree();
         return Tcreer;
     }
 
     ContenuCases[][] placerJoueurs(ContenuCases[][] tab2){
-        caseJoueur = rgb(ensembleJoueur[joueurActu].r,
-                                                        ensembleJoueur[joueurActu].v,
-                                                        ensembleJoueur[joueurActu].b,false) 
-                                                        + " " + ensembleJoueur[joueurActu].skin + " " + RESET;
+        caseJoueur = rgb(ensembleJoueur[(joueurActu)%length(ensembleJoueur)].r,ensembleJoueur[(joueurActu)%length(ensembleJoueur)].v, ensembleJoueur[(joueurActu)%length(ensembleJoueur)].b,false) + " " + ensembleJoueur[(joueurActu)%length(ensembleJoueur)].skin + " " + RESET;
         caseJoueur2 = rgb(ensembleJoueur[(joueurActu+1)%length(ensembleJoueur)].r,ensembleJoueur[(joueurActu+1)%length(ensembleJoueur)].v, ensembleJoueur[(joueurActu+1)%length(ensembleJoueur)].b,false) + " " + ensembleJoueur[(joueurActu+1)%length(ensembleJoueur)].skin + " " + RESET;
         caseJoueur3 = rgb(ensembleJoueur[(joueurActu+2)%length(ensembleJoueur)].r,ensembleJoueur[(joueurActu+2)%length(ensembleJoueur)].v, ensembleJoueur[(joueurActu+2)%length(ensembleJoueur)].b,false) + " " + ensembleJoueur[(joueurActu+2)%length(ensembleJoueur)].skin + " " + RESET;
         caseJoueur4 = rgb(ensembleJoueur[(joueurActu+3)%length(ensembleJoueur)].r,ensembleJoueur[(joueurActu+3)%length(ensembleJoueur)].v, ensembleJoueur[(joueurActu+3)%length(ensembleJoueur)].b,false) + " " + ensembleJoueur[(joueurActu+3)%length(ensembleJoueur)].skin + " " + RESET;
@@ -1409,37 +1661,13 @@ class RoadToTheKing extends Program{
     }
 
     void updateTab(int uneCase){
-        contenuChaqueCase[uneCase%5][ensembleJoueur[joueurActu].score].remplirCase = caseJoueur; 
-        readString();
+        contenuChaqueCase[uneCase%5][ensembleJoueur[joueurActu].score].remplirCase = rgb(ensembleJoueur[(joueurActu)%length(ensembleJoueur)].r,ensembleJoueur[(joueurActu)%length(ensembleJoueur)].v, ensembleJoueur[(joueurActu)%length(ensembleJoueur)].b,false) + " " + ensembleJoueur[(joueurActu)%length(ensembleJoueur)].skin + " " + RESET; 
         contenuChaqueCase[ensembleJoueur[joueurActu].posX][ensembleJoueur[joueurActu].score-ensembleJoueur[joueurActu].vitesse].remplirCase = caseVide;
         ensembleJoueur[joueurActu].posX = uneCase%5;
     }
 
-    void clearMoai(){   
-        /*clear moai processus :
-                regarder si moai est présent. Si oui :
-                    regarder coupable. si coupable n'a pas "placé moai" :
-                        alors il VIENT de le placer, donc lui donner "placé moai".
-                    si a la place il a bien "placé moai", 
-                        alors on verif si c'est son tour. Si oui, 
-                            alors le moai est clear, et son "placé moai".
-                */
-        for(int i = 0; i < length(contenuChaqueCase,1); i++){
-            for(int j = 0; j < length(contenuChaqueCase,2); j++){
-                if(contenuChaqueCase[i][j].possedeMoai){
-                    if(ensembleJoueur[contenuChaqueCase[i][j].coupableMoai].moaiPlacé == false){
-                        ensembleJoueur[contenuChaqueCase[i][j].coupableMoai].moaiPlacé = true;
-                    }else{
-                        if(ensembleJoueur[contenuChaqueCase[i][j].coupableMoai].jno == joueurActu){
-                            contenuChaqueCase[i][j].remplirCase = caseVide;
-                            ensembleJoueur[joueurActu].moaiPlacé = false;
-                        }
-                    }
-                }
-            }
-        }
-    }
 
+//----------------clear les objets---------------------------------------------------------------------------------------------------------------
     void clearProtégé(){
         if(ensembleJoueur[joueurActu].protégé == true){
             if(ensembleJoueur[joueurActu].protégéBoiteALuciolePrisEnCompte == false){
@@ -1462,13 +1690,60 @@ class RoadToTheKing extends Program{
             }
         }
     }
+
+    void clearMoai(){   
+        /*clear moai processus :
+        si le joueur n'as pas de moai référencés
+            on parcours tout le tableau de jeu
+                    si moai est présent :
+                        regarder coupable. si coupable est le joueur actif :
+                            alors il VIENT de le placer, donc lui donner "placé moai + 1".
+        si par contre il a des moai référencés, alors c'est qu'il ont deja fait un tour.
+            on parcours le tableau
+                    si maoi est présent :
+                        regarder coupable. Si coupable est le joueur actif :
+                            alors on peut le supprimer, il a fait son temps.
+                            par ailleurs, on enleve un moai référencé au joueur actif.
+        */
+        if(ensembleJoueur[joueurActu].moaiPlacé == 0){ //si moai non référencés
+            for(int i = 0; i < length(contenuChaqueCase,1); i++){
+                for(int j = 0; j < length(contenuChaqueCase,2); j++){
+                    if(contenuChaqueCase[i][j].possedeMoai){
+                        println("Coupable moai : " + contenuChaqueCase[i][j].coupableMoai);
+                        println("Jno : " + ensembleJoueur[joueurActu].jno);
+                        println("Nb de moai : " + ensembleJoueur[contenuChaqueCase[i][j].coupableMoai].moaiPlacé);
+                        if(contenuChaqueCase[i][j].possedeMoai && ensembleJoueur[joueurActu].jno-1 == contenuChaqueCase[i][j].coupableMoai){ //si ya un moai et joueur actu = coupable
+                            ensembleJoueur[joueurActu].moaiPlacé += 1;
+                        } //les référencer
+                    }
+                }
+            }
+        }else{ //si deja référencés
+            for(int i = 0; i < length(contenuChaqueCase,1); i++){
+                for(int j = 0; j < length(contenuChaqueCase,2); j++){
+                    if(contenuChaqueCase[i][j].possedeMoai && contenuChaqueCase[i][j].coupableMoai == ensembleJoueur[joueurActu].jno-1){
+                        println("Coupable moai : " + contenuChaqueCase[i][j].coupableMoai);
+                        println("Nb de moai : " + ensembleJoueur[contenuChaqueCase[i][j].coupableMoai].moaiPlacé);
+                        if(ensembleJoueur[contenuChaqueCase[i][j].coupableMoai].moaiPlacé != 0){
+                            contenuChaqueCase[i][j].remplirCase = caseVide; //alors les suppr
+                            ensembleJoueur[joueurActu].moaiPlacé = ensembleJoueur[joueurActu].moaiPlacé-1;
+                        } 
+                    }
+                }
+            }
+        }
+    }
+
+    void clearRunes(){
+        ensembleJoueur[joueurActu].secondeVie = false;
+        ensembleJoueur[joueurActu].confus = false;
+    }
 //-------------autre------------------------------------------------------------------------------------------------------
 
     boolean verifQuestion(int saisie, String reponse){
         if(saisie == StringToInt(reponse)){
             return true;
         }else{
-            println("Je suis désolé messager " + ensembleJoueur[joueurActu].nom + ", tu vas devoir rester un moment dans cet endroit.");
             return false;
         }
     }
@@ -1551,14 +1826,14 @@ class RoadToTheKing extends Program{
                 nouveauCompte[length(nouveauCompte,1)-2][1] = newMDP;
                 if(length(newMDP) < 3){
                     println("MDP trop court. Recommencez. (3 car min)");
-                    readString();
+                    attendreEntree();
                 }
             }
         }while(length(newName) < 2 ||
                 length(newMDP) < 3 ||
                 quelLigne(newName) != -1);
 
-        nouveauCompte[length(nouveauCompte,1)-2][2] = "0";
+        nouveauCompte[length(nouveauCompte,1)-2][2] = "1";
         nouveauCompte[length(nouveauCompte,1)-2][3] = "0";
         nouveauCompte[length(nouveauCompte,1)-2][4] = "0";
         nouveauCompte[length(nouveauCompte,1)-2][5] = "0";
@@ -1570,7 +1845,7 @@ class RoadToTheKing extends Program{
         saveCSV(nouveauCompte, "CSV/comptes.CSV");
         comptes = loadCSV("CSV/comptes.CSV");
         box("Nouveau compte crée avec succès !");
-        readString();
+        attendreEntree();
         print(clear);
         listeCompte();
     }
@@ -1636,7 +1911,7 @@ class RoadToTheKing extends Program{
             getCell(comptes, StringToInt(compte), 3) + 
             "XP.");
         print("Entrez pour continuer.");
-        readString();
+        attendreEntree();
         print(clear);
         choixVerifCompte(compte);
     }
@@ -1665,7 +1940,7 @@ class RoadToTheKing extends Program{
         saveCSV(lesNoms, "CSV/comptes.CSV");
         comptes = loadCSV("CSV/comptes.CSV");
         box("Nom changé avec succès !");
-        readString();
+        attendreEntree();
         print(clear);
         choixVerifCompte(compte);
     }
@@ -1702,7 +1977,7 @@ class RoadToTheKing extends Program{
                 box("Les mots de passe ne correspondent pas.");
             }
         }while(!(equals(nouveauMDP, ConfirmezMDP)));
-        readString();
+        attendreEntree();
         print(clear);
         choixVerifCompte(compte);
     }
@@ -1732,7 +2007,7 @@ class RoadToTheKing extends Program{
         saveCSV(lesSkins, "CSV/comptes.CSV");
         comptes = loadCSV("CSV/comptes.CSV");
         box("Skin changé avec succès !");
-        readString();
+        attendreEntree();
         print(clear);
         choixVerifCompte(compte);
     }
@@ -1765,7 +2040,7 @@ class RoadToTheKing extends Program{
         }else{
             box("Suppression annulée.");
         }
-        readString();
+        attendreEntree();
         print(clear);
         listeCompte();
     }

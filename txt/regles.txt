@@ -1,0 +1,117 @@
+                       ╔════════════════════════════╗ 
+                       ║ RÈGLES DE ROAD TO THE KING ║
+                       ╚════════════════════════════╝ 
+╔══════════╗                
+║ CONTEXTE ║
+╚══════════╝
+Mi-XVe siècle dans un monde où la magie est dangereuse ou corruptrice et où le mal est 
+omniprésent, vous aspirez à devenir messager, fort heureusement, le roi fit une annonce 
+discrète.
+Votre quête :
+    "Le premier messager réussissant à transmettre mon message au roi voisin
+    deviendra officiellement mon nouveau messager."
+
+C’est une occasion en or pour vous ! Vous compétirez donc seul ou contre 1 à 3 autres 
+aspirants pour une course semée d’embûches.
+
+╔════════════╗                
+║ BUT DU JEU ║
+╚════════════╝
+Arriver au bout du plateau.
+À chaque tour, une question de maths vous sera posée.
+Si vous parvenez à y répondre, vous avancerez d'une case.
+Mais des choses pimenteront la partie !
+
+                        ╔══════════════════════════╗ 
+                        ║        PARAMÊTRES        ║
+                        ╚══════════════════════════╝
+
+╔════════╗                
+║ PARTIE ║
+╚════════╝
+Lorsque vous lancez une partie, vous pourrez la personnaliser avec :
+    - Le temps imparti par question
+    - Le nombre de joueurs
+    - Vous connecter à votre compte
+    - Le nombre de points de victoire
+
+╔════════╗                
+║ COMPTE ║
+╚════════╝
+Concernant les comptes :
+    - Vous pouvez en créer un en lui donnant un nom et un mot de passe. Un skin 
+      vous sera attribué de base.
+    - Vous pouvez modifier votre compte, en y accédent grace au mot de passe, pouvant
+      modifier : le nom, le mot de passe et changer de skin.
+    - Vous pouvez supprimer un compte en donnant le mot de passe associé.
+    - Mais egalement visualiser vos stats.
+
+                        ╔══════════════════════════╗ 
+                        ║          ITEMS           ║
+                        ╚══════════════════════════╝
+
+Pendant la partie, vous pourrez, sur votre chemin, ramasser certains items si vous avez
+la chance de tomber dessus.
+Au début de votre tour, vous pourrez écrire "T" pour consulter vos
+items et leurs effets, ainsi que "U" pour ouvrir le menu de sélection et utiliser ces 
+objets.
+        
+╔═════════╗                
+║ EXEMPLE ║
+╚═════════╝
+Votre tour démarre, à la place de répondre à la qestion, vous décidez de taper "T" et
+vous constatez que vous avez un "minerai de fer", vous tapez donc "U" pour ouvrir le menu
+de sélection d'items et vous choisissez l'objet correspondant, il s'activera
+selon son utilisation.
+
+╔══════════╗                
+║ REMARQUE ║
+╚══════════╝
+À savoir que si vous devez placer un de vos items, si vous voulez le placer dans la colonne
+derrière vous, ce sera dans l'intervalle 1 à 5.
+Si vous voulez le placer sur la colonne sur laquelle vous êtes, ce sera sur l'intervalle 6 à 10.
+Si vous voulez le placer sur la colonne devant vous, ce sera sur l'intervalle 11 à 15.
+        
+                        ╔══════════════════════════╗ 
+                        ║       DÉPLACEMENTS       ║
+                        ╚══════════════════════════╝
+
+À votre tour, vous devrez choisir la case vers laquelle vous vous déplacez.
+Elles sont numérotées de 1 à 5 (de haut en bas) mais vous ne pouvez vous déplacer que sur
+les 3 cases devant vous.
+Exemple :
+
+                       V = vous. C = case possible
+                        ╔═══╤═══╤═══╤═══╤═══╤═══╗
+                        ║   │   │ C │   │   │   ║
+                        ╟───┼───┼───┼───┼───┼───╢
+                        ║   │ V │ C │   │   │   ║
+                        ╟───┼───┼───┼───┼───┼───╢
+                        ║   │   │ C │   │   │   ║
+                        ╟───┼───┼───┼───┼───┼───╢
+                        ║   │   │   │   │   │   ║
+                        ╟───┼───┼───┼───┼───┼───╢
+                        ║   │   │   │   │   │   ║
+                        ╚═══╧═══╧═══╧═══╧═══╧═══╝
+                 Soit les cases 1, 2 et 3 (mais pas la 4)
+
+Cependant ! Si un autre joueur se trouve sur une case possible, elle ne devient plus
+accessible.
+Le fait d’être collé à une bordure restreint aussi vos cases, tout comme certains objets
+ou événements.
+        
+                        ╔══════════════════════════╗ 
+                        ║        ÉVÉNEMENTS        ║
+                        ╚══════════════════════════╝
+
+Pour rendre le jeu plus immersif, des événements surviendront, rendant crédibles les items et
+les questions que vous rencontrerez.
+
+                        ╔══════════════════════════╗ 
+                        ║       FIN DE PARTIE      ║
+                        ╚══════════════════════════╝
+
+La fin de la partie est définie par l'arrivée d'un joueur au bout de la carte, cela signifie
+que ce joueur est devenu le nouveau messager du roi !
+Suite à cette victoire, vous pourrez décider de terminer votre aventure ici ou de remettre en
+jeu votre titre nouvellement gagné !
