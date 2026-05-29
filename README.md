@@ -1,5 +1,10 @@
 # SAE 1.02 - Road to the King
 
+## Introduction
+
+Ce projet a été réalisé en iJava (Version simplifiée du langage Java, la majorité de la partie orientée objet étant omise) lors d'un projet de premier semestre en BUT informatique. 
+Ce langage a été créé à des fins pédagogique par Yann SECQ, Enseignant-Chercheur en Informatique à l'Université de Lille.
+
 ## Contexte
 
 Bienvenue au Mi-XVe siècle. Dans un monde où la magie, dangereuse et corruptrice, domine la population. 
