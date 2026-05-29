@@ -4,12 +4,12 @@
 ╔══════════╗                
 ║ CONTEXTE ║
 ╚══════════╝
-Mi-XVe siècle dans un monde où la magie est dangereuse ou corruptrice et où le mal est 
-omniprésent, vous aspirez à devenir messager, fort heureusement, le roi fit une annonce 
-discrète.
-Votre quête :
-    "Le premier messager réussissant à transmettre mon message au roi voisin
-    deviendra officiellement mon nouveau messager."
+Bienvenue au Mi-XVe siècle. Dans un monde où la magie, dangereuse et corruptrice, domine la population. 
+Le mal y est omniprésent.
+Cependant, malgré ce contexte sombre, vous aspirez à devenir messager. Et c'est votre jour de chance ! Lors d'une bataille dans lequel votre royaume était impliqué, le messager du roi succomba.
+Sur un annonce officiel du roi, un tournoi est lancé pour decider du nouveau messager. 
+Le premier messager réussissant à transmettre son message au roi voisin
+deviendra officiellement son nouveau messager.
 
 C’est une occasion en or pour vous ! Vous compétirez donc seul ou contre 1 à 3 autres 
 aspirants pour une course semée d’embûches.

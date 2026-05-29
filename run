@@ -1,0 +1,20 @@
+#!/bin/bash
+
+cd src/
+clear
+echo 'Chargement.'
+java -jar ../lib/ijava.jar compile ContenuCases.java > /dev/null
+clear
+echo 'Chargement..'
+java -jar ../lib/ijava.jar compile Joueur.java > /dev/null
+clear
+echo 'Chargement...'
+java -jar ../lib/ijava.jar compile Partie.java > /dev/null
+clear
+echo 'Chargement.'
+java -jar ../lib/ijava.jar compile RoadToTheKing.java > /dev/null
+clear
+echo 'Chargement..'
+cd ../bin
+mv ../src/*.class .
+java -jar ../lib/ijava.jar execute RoadToTheKing

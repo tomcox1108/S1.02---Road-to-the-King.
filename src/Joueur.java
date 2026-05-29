@@ -15,7 +15,7 @@ class Joueur{
     boolean secondeVie = false;
     int bloqué = 0;
     int moaiPlacé = 0;
-    String tools = "0000000000000";
+    String tools = "0020010000102";
     boolean confus = false;
     int r;
     int v;
